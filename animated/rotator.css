@@ -1,0 +1,166 @@
+/* Centered word-flip headline, adapted from the user's supplied GSAP source. */
+.intro.intro--rotating > .content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.intro.intro--rotating .section-kicker { margin-bottom: 28px; }
+.by-design-headline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 1050px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink, #242424);
+  font-family: "LJC Haas", Helvetica, Arial, sans-serif;
+  font-size: clamp(64px, 7.3vw, 104px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -.055em;
+  text-align: center;
+}
+.by-design-headline .word-window {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 5.8em;
+  max-width: 100%;
+  min-width: 0;
+  height: 1.2em;
+  overflow: hidden;
+  isolation: isolate;
+}
+.by-design-headline .rotating-word {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: max-content;
+  padding: .025em .025em .09em;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  color: inherit;
+  white-space: nowrap;
+}
+.by-design-headline .rotating-word:first-child { opacity: 1; visibility: visible; }
+.by-design-headline.is-rotating .rotating-word { will-change: transform, opacity; }
+.by-design-headline .suffix {
+  display: block;
+  flex: none;
+  color: inherit;
+  white-space: nowrap;
+}
+.intro.intro--rotating .intro-copy {
+  width: 100%;
+  max-width: 740px;
+  margin: 42px auto 0;
+  font-size: clamp(21px, 1.8vw, 26px);
+  line-height: 1.4;
+  text-align: center;
+}
+.intro--rotating #headline-motion-toggle {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 767px) {
+  .by-design-headline { font-size: clamp(44px, 12vw, 76px); }
+  .intro.intro--rotating .section-kicker { margin-bottom: 22px; }
+  .intro.intro--rotating .intro-copy { margin-top: 30px; max-width: 32ch; font-size: 21px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .by-design-headline.is-rotating .rotating-word { will-change: auto; }
+}
+@media (forced-colors: active) {
+  .by-design-headline, .by-design-headline .rotating-word, .by-design-headline .suffix { color: CanvasText; }
+}
+
+/* All three introductions follow the saved 1440 px Illustrator typography.
+   Use installed Helvetica faces; no licensed desktop font is redistributed. */
+@font-face {
+  font-family: "Colophon Helvetica";
+  src: local("Helvetica-Bold"), local("Helvetica Bold");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Colophon Helvetica";
+  src: local("Helvetica-Light"), local("Helvetica Light"), local("HelveticaNeue-Light");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+body[data-theme] .intro.intro--rotating {
+  padding-block: 64px 82px;
+}
+body[data-theme] .intro.intro--rotating .section-kicker {
+  align-self: flex-start;
+  margin-bottom: clamp(56px, 6.6667vw, 96px);
+  font-size: 14px;
+  text-align: left;
+}
+body[data-theme] .by-design-headline {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: .266em;
+  width: fit-content;
+  max-width: 100%;
+  font-family: "Colophon Helvetica", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: clamp(26px, 5.5556vw, 80px);
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+body[data-theme] .by-design-headline .word-window { width: 5.03em; }
+body[data-theme] .by-design-headline .rotating-word {
+  left: 100%;
+  padding: 0;
+  transform: translateX(-100%);
+}
+body[data-theme] .by-design-headline .suffix { font-weight: 300; }
+body[data-theme] .intro.intro--rotating .intro-copy {
+  max-width: 850px;
+  margin-top: 48px;
+  font-size: clamp(22px, 2.7083vw, 39px);
+  line-height: 1.1282;
+  letter-spacing: 0;
+  text-wrap: wrap;
+}
+body[data-theme] .intro--rotating #headline-motion-toggle { margin-top: 16px; }
+[data-theme="colophon"] .work .colophon-work-heading { margin-bottom: 58px; }
+[data-theme="colophon"] .colophon-work-heading .section-kicker { font-size: 14px; }
+@media (max-width: 767px) {
+  body[data-theme] .intro.intro--rotating { padding-block: 40px 64px; }
+  body[data-theme] .by-design-headline { font-size: clamp(26px, 7.18vw, 42px); }
+  body[data-theme] .intro.intro--rotating .section-kicker { font-size: 11px; }
+  body[data-theme] .intro.intro--rotating .intro-copy {
+    max-width: 34ch;
+    margin-top: 32px;
+    line-height: 1.35;
+  }
+  [data-theme="colophon"] .work .colophon-work-heading { margin-bottom: 32px; }
+  [data-theme="colophon"] .colophon-work-heading .section-kicker { font-size: 11px; }
+}
+
+/* Gallery alone wraps the entire phrase in a responsive outline.
+   Its measured word aperture animates; the fit-content pill follows naturally. */
+body[data-theme="gallery"] .by-design-headline {
+  padding: .17em .48em .2em;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+}
+@media (max-width: 767px) {
+  body[data-theme="gallery"] .by-design-headline {
+    font-size: clamp(23px, 6.5vw, 42px);
+    padding-inline: .38em;
+    border-width: 1px;
+  }
+}

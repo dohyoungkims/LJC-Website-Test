@@ -1,0 +1,70 @@
+/* Glass-inspired web overlays. Native dialog supplies focus trapping.
+   Gallery: centered lens. Editorial: wider search sheet. */
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog {
+  --search-backdrop-opacity: 0;
+  width: min(800px,calc(100% - 48px));
+  max-width: none;
+  inset: clamp(92px,18svh,180px) 0 auto;
+  margin: 0 auto;
+  max-height: calc(82dvh - 30px);
+  padding: 26px 34px 30px;
+  border: 1px solid rgb(255 255 255 / .85);
+  border-radius: 26px;
+  background: rgb(255 255 255 / .86);
+  color: #242726;
+  box-shadow: 0 24px 90px rgb(35 45 41 / .16),inset 0 1px 0 #fff;
+  -webkit-backdrop-filter: blur(32px) saturate(1.25);
+  backdrop-filter: blur(32px) saturate(1.25);
+  overflow-x: hidden;
+}
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog::backdrop {
+  background: rgb(230 235 232 / .24);
+  -webkit-backdrop-filter: blur(22px) saturate(.7);
+  backdrop-filter: blur(22px) saturate(.7);
+  opacity: var(--search-backdrop-opacity,1);
+}
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog .dialog-header { justify-content: flex-end; margin-bottom: 0; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog .dialog-header > img { display: none; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog .close-dialog { width: 42px; height: 42px; min-width: 42px; min-height: 42px; font-size: 26px; border-radius: 50%; background: rgb(75 89 80 / .06); }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-form label { font-size: 15px; margin: -22px 65px 20px 0; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-form input { width: 100%; padding: 5px 0 22px; font-size: clamp(30px,3.7vw,48px); border-color: #abb5ae; background: transparent; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-form input:focus { outline: none; border-bottom-color: #222b26; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-form input::placeholder { color: #626b65; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-count { font-size: 13px; color: #515b54; margin: 20px 0 8px; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-results { gap: 18px; margin-top: 10px; max-height: min(45dvh,450px); padding: 6px; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-result { grid-template-columns: 90px minmax(0,1fr); gap: 20px; padding: 8px; margin: -3px; border-radius: 10px; transition: background .2s; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-result:hover { background: rgb(220 226 221 / .5); }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-result img { width: 90px; height: 65px; object-fit: cover; border-radius: 3px; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-result h3 { font-size: 21px; letter-spacing: -.02em; }
+:is([data-theme="gallery"], [data-theme="editorial"]) .search-result p { margin-top: 5px; font-size: 13px; }
+.search-start { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-top: 22px; font-size: 13px; }
+.search-start > span { color: #626b65; margin-right: 4px; }
+.search-start button { padding: 8px 13px; border: 1px solid #bec6c0; border-radius: 999px; background: transparent; font-size: 13px; min-height: 40px; }
+.search-start button:hover { background: #e5ebe6; }
+.search-dialog:has(#project-search:placeholder-shown) :is(.search-count,.search-results) { display: none; }
+.search-dialog:has(#project-search:not(:placeholder-shown)) .search-start { display: none; }
+[data-theme="editorial"] .search-dialog {
+  inset-block-start: clamp(90px,11svh,125px);
+  width: min(1120px,calc(100% - 64px));
+  max-height: calc(89dvh - 30px);
+  padding: 30px 46px 38px;
+  border-radius: 12px;
+  background: rgb(247 246 242 / .91);
+}
+[data-theme="editorial"] .search-form input { font-size: clamp(34px,5vw,66px); font-weight: 400; letter-spacing: -.04em; }
+[data-theme="editorial"] .search-results { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; }
+[data-theme="editorial"] .search-start { justify-content: flex-end; }
+@media (max-width: 767px) {
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog { width: calc(100% - 24px); inset-block-start: 82px; max-height: calc(100dvh - 102px); padding: 20px 22px 24px; }
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-form input { font-size: 30px; }
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-results { grid-template-columns: 1fr; max-height: 45dvh; }
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-result { grid-template-columns: 65px minmax(0,1fr); gap: 14px; }
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-result img { width: 65px; height: 58px; }
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-result h3 { font-size: 17px; }
+  [data-theme="editorial"] .search-start { justify-content: flex-start; }
+  .search-start { gap: 6px 10px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog { background: #f8faf8; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  :is([data-theme="gallery"], [data-theme="editorial"]) .search-dialog::backdrop { background: rgb(225 230 226 / .94); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

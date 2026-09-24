@@ -1,0 +1,137 @@
+/* Source-preserving Editorial directory: immediate image selection, native
+ * controls, the existing Haas typography and warm footer canvas. */
+body[data-theme="editorial"] .office-grid[data-editorial-offices="ready"] {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 48px;
+}
+body[data-theme="editorial"] .editorial-offices {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(200px, .72fr) minmax(0, 1.28fr);
+  align-items: start;
+  column-gap: clamp(36px, 5vw, 72px);
+  min-width: 0;
+}
+body[data-theme="editorial"] .editorial-office-index {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding-top: 1px;
+}
+body[data-theme="editorial"] .editorial-office-button {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 58px;
+  padding: 10px 0 13px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: clamp(25px, 2.65vw, 38px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -.035em;
+  text-align: left;
+  cursor: pointer;
+}
+body[data-theme="editorial"] .editorial-office-button[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 500;
+}
+body[data-theme="editorial"] .editorial-office-arrow {
+  flex: 0 0 auto;
+  padding-right: 2px;
+  font-size: .66em;
+  visibility: hidden;
+}
+body[data-theme="editorial"] .editorial-office-button[aria-pressed="true"] .editorial-office-arrow { visibility: visible; }
+body[data-theme="editorial"] .editorial-office-button:focus-visible { outline-offset: 5px; }
+body[data-theme="editorial"] .editorial-office-card {
+  min-width: 0;
+  min-height: 550px;
+}
+body[data-theme="editorial"] .editorial-office-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #e1dfd7;
+  overflow: hidden;
+}
+body[data-theme="editorial"] .editorial-office-photo img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+body[data-theme="editorial"] .editorial-office-photo img[hidden],
+body[data-theme="editorial"] .editorial-office-photo[hidden] { display: none; }
+body[data-theme="editorial"] .editorial-office-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px 30px;
+  padding-top: 24px;
+}
+body[data-theme="editorial"] .editorial-office-name {
+  grid-column: 1 / -1;
+  font-size: clamp(26px, 2.4vw, 34px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -.025em;
+}
+body[data-theme="editorial"] .editorial-office-address {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.5;
+  font-style: normal;
+}
+body[data-theme="editorial"] .editorial-office-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 17px;
+  padding-top: 1px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+body[data-theme="editorial"] .editorial-office-phone:hover { text-decoration: underline; text-underline-offset: 4px; }
+body[data-theme="editorial"] .editorial-office-directions {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 16px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid currentColor;
+  white-space: nowrap;
+}
+body[data-theme="editorial"] .editorial-office-card:is([data-photo="missing"], [data-photo="error"]) {
+  border-top: 1px solid var(--line);
+}
+body[data-theme="editorial"] .editorial-office-card:is([data-photo="missing"], [data-photo="error"]) .editorial-office-details {
+  padding-top: 38px;
+}
+@media (max-width: 1023px) {
+  body[data-theme="editorial"] .editorial-offices { grid-template-columns: minmax(190px, .72fr) minmax(0, 1.28fr); column-gap: 34px; }
+  body[data-theme="editorial"] .editorial-office-card { min-height: 450px; }
+  body[data-theme="editorial"] .editorial-office-details { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  body[data-theme="editorial"] .editorial-office-actions { gap: 14px; }
+  body[data-theme="editorial"] .editorial-office-button { min-height: 54px; }
+}
+@media (max-width: 767px) {
+  body[data-theme="editorial"] .office-grid[data-editorial-offices="ready"] { row-gap: 30px; }
+  body[data-theme="editorial"] .editorial-offices { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  body[data-theme="editorial"] .editorial-office-index { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 24px; padding: 0; }
+  body[data-theme="editorial"] .editorial-office-button { min-height: 44px; gap: 7px; padding: 9px 0; font-size: clamp(18px, 3.8vw, 24px); letter-spacing: -.025em; }
+  body[data-theme="editorial"] .editorial-office-arrow { font-size: 13px; }
+  body[data-theme="editorial"] .editorial-office-card { min-height: 0; }
+  body[data-theme="editorial"] .editorial-office-details { padding-top: 21px; }
+  body[data-theme="editorial"] .editorial-office-name { font-size: 27px; }
+  body[data-theme="editorial"] .editorial-office-card:is([data-photo="missing"], [data-photo="error"]) .editorial-office-details { padding-top: 26px; }
+}
+@media (max-width: 359px) {
+  body[data-theme="editorial"] .editorial-office-index { column-gap: 15px; }
+  body[data-theme="editorial"] .editorial-office-button { gap: 4px; font-size: 17px; }
+  body[data-theme="editorial"] .editorial-office-arrow { font-size: 11px; padding-right: 0; }
+}

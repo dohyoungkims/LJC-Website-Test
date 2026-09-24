@@ -1,0 +1,48 @@
+/* Separate vector marks for the three project-link treatments. */
+[data-theme] :is(.gallery-project-arrow,.project-arrow) {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  padding:0;
+  color:var(--ink,#242424);
+  line-height:1;
+  transform:none;
+  transition:none;
+}
+[data-theme] :is(.gallery-project-arrow,.project-arrow) .project-link-mark {
+  display:block;
+  flex:none;
+  width:24px;
+  height:24px;
+  overflow:visible;
+  transition:transform .38s cubic-bezier(.2,.7,.2,1);
+}
+/* Keep the Colophon caption's three columns; reserve a small end space for its mark. */
+[data-theme="colophon"] .project-caption { padding-right:44px; }
+[data-theme="colophon"] .project-arrow { position:absolute; grid-area:auto; top:28px; right:0; }
+[data-theme="colophon"] .arrow-tip { transition:transform .38s cubic-bezier(.2,.7,.2,1); }
+[data-theme="gallery"] .gallery-project-link:is(:hover,:focus-visible) .gallery-project-arrow,
+[data-theme="editorial"] .project:is(:hover,:focus-visible) .project-arrow,
+[data-theme="colophon"] .project:is(:hover,:focus-visible) .project-arrow { transform:none; }
+
+/* A short directional gesture; Colophon's corner stays anchored. */
+[data-theme="gallery"] .gallery-project-link:focus-visible .project-link-mark { transform:translate(2px,-2px); }
+[data-theme="editorial"] .project:focus-visible .project-link-mark { transform:translateX(3px); }
+[data-theme="colophon"] .project:focus-visible .arrow-tip { transform:translate(1px,-1px); }
+@media(hover:hover) and (pointer:fine) {
+  [data-theme="gallery"] .gallery-project-link:hover .project-link-mark { transform:translate(2px,-2px); }
+  [data-theme="editorial"] .project:hover .project-link-mark { transform:translateX(3px); }
+  [data-theme="colophon"] .project:hover .arrow-tip { transform:translate(1px,-1px); }
+}
+@media(max-width:767px) {
+  [data-theme] :is(.gallery-project-arrow,.project-arrow) { width:24px; height:24px; }
+  [data-theme] :is(.gallery-project-arrow,.project-arrow) .project-link-mark { width:22px; height:22px; }
+  [data-theme="colophon"] .project-caption { padding-right:34px; }
+  [data-theme="colophon"] .project-arrow { top:22px; }
+}
+.motion-paused :is(.project-link-mark,.arrow-tip) { transition:none!important; transform:none!important; }
+@media(prefers-reduced-motion:reduce) {
+  [data-theme] :is(.project-link-mark,.arrow-tip) { transition:none!important; transform:none!important; }
+}
