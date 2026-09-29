@@ -16,7 +16,7 @@
     notify({type:'ljc-motion-state', paused, reduced:paused || reduced.matches, system:reduced.matches});
   }
   function jump(id) {
-    const aliases = {atlas:'offices', news:'work', 'case-studies':'work'};
+    const aliases = {atlas:'offices', news:'work'};
     const target = document.getElementById(aliases[id] || id);
     if (target) target.scrollIntoView({behavior:paused || reduced.matches ? 'instant' : 'smooth', block:'start'});
   }
@@ -80,16 +80,6 @@
       }
     });
   });
-  document.querySelectorAll('[data-hero-select]').forEach(button => button.addEventListener('click', () => {
-    const index = button.dataset.heroSelect;
-    document.querySelectorAll('[data-hero-slide]').forEach(slide => {
-      const selected = slide.dataset.heroSlide === index;
-      slide.classList.toggle('is-current', selected);
-      slide.setAttribute('aria-hidden', String(!selected));
-    });
-    document.querySelectorAll('[data-hero-caption]').forEach(caption => caption.hidden = caption.dataset.heroCaption !== index);
-    document.querySelectorAll('[data-hero-select]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
-  }));
   const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
   const match = (haystack, needle) => normalize(needle).split(/\s+/).filter(Boolean).every(token => normalize(haystack).includes(token));
   const cards = [...document.querySelectorAll('[data-case-card]')];

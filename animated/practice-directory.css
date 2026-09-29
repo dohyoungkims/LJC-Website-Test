@@ -123,3 +123,12 @@
 @media(max-width:600px) {
  [data-menu-experience=gallery] .practice-list { grid-template-columns:1fr; gap:22px; }
 }
+
+/* Keep all five Editorial destinations and practice links visible in review frames. */
+@media(min-width:768px) and (max-height:800px) {
+ .navigation-dialog[data-menu-experience=editorial] .menu-links { gap:2px; }
+ .navigation-dialog[data-menu-experience=editorial] .menu-links a { font-size:clamp(36px,6.1dvh,48px); padding-block:4px; }
+ .navigation-dialog[data-menu-experience=editorial] .menu-eyebrow { margin-bottom:12px; }
+ [data-menu-experience=editorial] .practice-controls { margin-top:14px; }
+ [data-menu-experience=editorial] .menu-preview-images { height:min(43dvh,350px); min-height:0; }
+}

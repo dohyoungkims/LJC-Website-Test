@@ -54,7 +54,7 @@
     let data = {};
     try { data = JSON.parse(document.getElementById('project-data').textContent); } catch (_) { /* The links remain usable without preview data. */ }
     const fallback = Object.values(data).filter(project => project.image);
-    projects = ['obama', 'wacker', 'harris-stowe', 'jaffe'].map((key, i) => data[key] || fallback[i % Math.max(1, fallback.length)]).filter(Boolean);
+    projects = ['obama', 'fulton-east', 'wacker', 'harris-stowe', 'jaffe'].map((key, i) => data[key] || fallback[i % Math.max(1, fallback.length)]).filter(Boolean);
     if (projects.length) {
       preview = document.createElement('figure');
       preview.className = 'menu-project-preview';

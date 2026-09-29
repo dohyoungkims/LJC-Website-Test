@@ -23,3 +23,41 @@ body[data-theme=studio] .hp-work{padding-top:50px}body[data-theme=studio] .hp-wo
 /* Compact navigation preserves the four clear choices on phones. */
 .hp-menu-column-toggle,.hp-menu-mobile-work{display:none}
 @media(max-width:640px){.hp-menu-column-title{display:none}.hp-menu-column-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:20px;text-align:left;border:0;padding:18px 0;font-size:27px;line-height:1.18;letter-spacing:-.025em}.hp-menu-column-toggle span{font-size:25px}.hp-menu-grid{gap:0;margin-block:15px auto}.hp-menu-grid section{border-top:1px solid #605e5b}.hp-menu-column-links{padding-bottom:27px}.hp-menu-column-links a{font-size:18px}.hp-menu-column-links h4{margin-top:22px}.hp-menu-mobile-work{display:flex;justify-content:space-between;gap:20px;font-size:17px;padding:16px 0;margin-bottom:18px}.hp-menu-top{margin-bottom:30px}.hp-menu-bottom{margin-top:35px}.hp-menu-grid section:last-child{border-bottom:1px solid #605e5b}}
+
+/* Refresh revision: photography stays within the page grid, with generous breathing room. */
+body[data-theme=refresh] .hp-header{background:var(--hp-paper);color:var(--hp-ink);box-shadow:0 1px 0 rgba(30,30,25,.1)}
+body[data-theme=refresh] .hp-header .hp-logo-dark{display:block}
+body[data-theme=refresh] .hp-header .hp-logo-light{display:none}
+.hp-hero--refresh{display:block;min-height:0;isolation:auto;color:var(--hp-ink);padding:150px var(--hp-gutter) 76px;max-width:1680px;margin-inline:auto}
+.hp-refresh-intro{display:grid;grid-template-columns:1fr auto;gap:22px 50px;align-items:end}
+.hp-refresh-intro>.hp-small{grid-column:1/-1}
+.hp-refresh-intro h1{font-family:'Helvetica Neue','LJC Haas',Helvetica,Arial,sans-serif;font-size:clamp(32px,3.8vw,62px);line-height:1.12;letter-spacing:-.04em;font-weight:300;color:var(--hp-plum);max-width:23em;text-wrap:pretty}
+.hp-refresh-intro>.hp-text-link{margin-bottom:6px;white-space:nowrap}
+.hp-refresh-composition{display:grid;grid-template-columns:1.2fr .8fr 1fr;gap:clamp(24px,3vw,48px);align-items:start;margin-top:58px}
+.hp-refresh-preview{display:block;min-width:0}
+.hp-refresh-preview>div{aspect-ratio:1.38;overflow:hidden;background:#e8e7e3}
+.hp-refresh-preview img{width:100%;height:100%;object-fit:cover;transition:transform .7s var(--hp-ease)}
+.hp-refresh-preview:hover img{transform:scale(1.025)}
+.hp-refresh-preview--2{padding-top:52px}
+.hp-refresh-preview--2>div{aspect-ratio:.85}
+.hp-refresh-preview--3{padding-top:112px}
+.hp-refresh-preview--3>div{aspect-ratio:1.3}
+.hp-refresh-preview p{display:flex;align-items:start;justify-content:space-between;gap:20px;font-size:15px;line-height:1.25;margin-top:15px}
+.hp-refresh-preview p>span:last-child{font-size:21px;line-height:1;flex-shrink:0}
+body[data-theme=refresh] .hp-work{background:var(--hp-paper);color:var(--hp-ink);--hp-muted:#67665f;--hp-line:#d5d4cf;padding-top:55px;max-width:1680px;margin-inline:auto}
+body[data-theme=refresh] .hp-work-heading h2{color:var(--hp-plum);font-size:clamp(42px,4.4vw,70px)}
+body[data-theme=refresh] .hp-projects{grid-template-columns:repeat(3,minmax(0,1fr));gap:46px 28px}
+body[data-theme=refresh] .hp-project a{overflow:visible}
+body[data-theme=refresh] .hp-project-image{aspect-ratio:1.38}
+body[data-theme=refresh] .hp-project-caption{position:static;display:grid;grid-template-columns:1fr;gap:7px;background:none;color:var(--hp-ink);opacity:1;transform:none;padding:16px 0 0}
+body[data-theme=refresh] .hp-project-caption h3{font-size:clamp(18px,1.5vw,24px);line-height:1.2;letter-spacing:-.025em}
+body[data-theme=refresh] .hp-project-caption p{grid-column:1;font-size:13px;color:var(--hp-muted);opacity:1}
+body[data-theme=refresh] .hp-project-index{display:none}
+body[data-theme=refresh] .hp-project-open{font-size:25px;right:17px;top:14px}
+.hp-menu-case-studies{display:flex;align-items:center;gap:25px;width:fit-content;font-size:clamp(24px,2.2vw,36px);line-height:1.15;letter-spacing:-.025em;padding-block:4px;margin-bottom:30px}
+.hp-menu-case-studies:hover{text-decoration:underline;text-underline-offset:6px}
+.hp-menu:has(.hp-menu-case-studies) .hp-menu-top{margin-bottom:30px}
+@media(min-width:1000px) and (max-height:750px){.hp-menu:has(.hp-menu-case-studies) .hp-menu-top{margin-bottom:15px}.hp-menu-case-studies{font-size:25px;margin-bottom:22px}.hp-menu:has(.hp-menu-case-studies) .hp-menu-bottom{margin-top:20px}}
+@media(max-width:1000px){.hp-refresh-intro{grid-template-columns:1fr}.hp-refresh-intro>.hp-text-link{margin-top:5px}.hp-refresh-composition{gap:24px;margin-top:42px}.hp-refresh-preview--2{padding-top:35px}.hp-refresh-preview--3{padding-top:70px}body[data-theme=refresh] .hp-projects{grid-template-columns:repeat(2,minmax(0,1fr));gap:38px 24px}}
+@media(max-width:640px){.hp-hero--refresh{padding-top:118px;padding-bottom:40px}.hp-refresh-intro{gap:22px}.hp-refresh-intro h1{font-size:clamp(29px,7.8vw,43px);line-height:1.14}.hp-refresh-intro>.hp-small{font-size:11px}.hp-refresh-intro>.hp-text-link{font-size:15px}.hp-refresh-composition{grid-template-columns:1fr 1fr;gap:25px 17px;margin-top:34px}.hp-refresh-preview--1{grid-column:1/-1;width:84%}.hp-refresh-preview--1>div{aspect-ratio:1.5}.hp-refresh-preview--2{padding-top:0}.hp-refresh-preview--2>div{aspect-ratio:.9}.hp-refresh-preview--3{padding-top:28px}.hp-refresh-preview--3>div{aspect-ratio:1}.hp-refresh-preview p{font-size:12px;gap:9px;margin-top:11px}.hp-refresh-preview p>span:last-child{font-size:17px}body[data-theme=refresh] .hp-work{padding-top:35px}body[data-theme=refresh] .hp-work-heading h2{font-size:43px}body[data-theme=refresh] .hp-projects{grid-template-columns:1fr;gap:30px;margin-inline:0}body[data-theme=refresh] .hp-project-image{aspect-ratio:1.5}body[data-theme=refresh] .hp-project-caption{padding-top:13px;gap:5px}body[data-theme=refresh] .hp-project-caption h3{font-size:21px}body[data-theme=refresh] .hp-project-caption p{font-size:13px}.hp-menu-case-studies{font-size:24px;justify-content:space-between;width:100%;margin-bottom:24px;padding-block:12px}.hp-menu:has(.hp-menu-case-studies) .hp-menu-top{margin-bottom:22px}}
+@media(prefers-reduced-motion:reduce){.hp-refresh-preview:hover img{transform:none}}

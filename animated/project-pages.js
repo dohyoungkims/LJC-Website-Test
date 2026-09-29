@@ -90,76 +90,28 @@
   });
 
   const casePages = project.caseStudy?.pages || [];
-  const reader = document.getElementById('case-reader');
   const track = document.querySelector('.case-pages-track');
   const caseCards = Array.from(document.querySelectorAll('.case-page'));
   let caseIndex = 0;
-  let caseZoom = 1;
   let caseScrollFrame = 0;
-  const readerImage = document.getElementById('case-reader-image');
-  const readerStage = document.querySelector('.case-reader-stage');
-
-  function fitCaseImage(resetPosition = false) {
-    if (!reader?.open || !readerImage.naturalWidth || !readerStage.clientWidth) return;
-    const fit = Math.min((readerStage.clientWidth - 16) / readerImage.naturalWidth, (readerStage.clientHeight - 16) / readerImage.naturalHeight);
-    readerImage.style.width = `${Math.max(1, Math.round(readerImage.naturalWidth * fit * caseZoom))}px`;
-    readerImage.style.height = 'auto';
-    document.getElementById('case-reader-scale').textContent = `${Math.round(caseZoom * 100)}%`;
-    reader.querySelector('[data-reader-zoom="out"]').disabled = caseZoom <= 1;
-    reader.querySelector('[data-reader-zoom="in"]').disabled = caseZoom >= 4;
-    if (resetPosition) readerStage.scrollTo({left:0,top:0,behavior:'instant'});
-  }
   function syncCaseControls() {
     document.querySelector('.case-strip-count').textContent = `${String(caseIndex + 1).padStart(2,'0')} / ${String(casePages.length).padStart(2,'0')}`;
-    document.querySelectorAll('[data-case-step], [data-reader-step]').forEach(button => {
-      const direction = Number(button.dataset.caseStep || button.dataset.readerStep);
-      button.disabled = direction < 0 ? caseIndex === 0 : caseIndex === casePages.length - 1;
+    document.querySelectorAll('[data-case-step]').forEach(button => {
+      button.disabled = Number(button.dataset.caseStep) < 0 ? caseIndex === 0 : caseIndex === casePages.length - 1;
     });
   }
-  function showCasePage(index, scrollStrip = false) {
+  function showCasePage(index) {
     caseIndex = Math.max(0, Math.min(casePages.length - 1, index));
-    const page = casePages[caseIndex];
-    caseZoom = 1;
-    readerImage.width = page.width;
-    readerImage.height = page.height;
-    readerImage.src = page.src;
-    readerImage.alt = page.alt;
-    document.getElementById('case-reader-count').textContent = `${page.label} · ${caseIndex + 1} of ${casePages.length}`;
-    document.getElementById('case-reader-text').textContent = page.text?.trim() || 'This page is a photographic spread. Use the zoom controls to explore the artwork.';
-    reader.querySelector('.case-reader-transcript').open = false;
     syncCaseControls();
-    fitCaseImage(true);
-    if (scrollStrip && track) track.scrollTo({left:caseCards[caseIndex].offsetLeft - track.offsetLeft,behavior:reduced() ? 'instant' : 'smooth'});
+    track.scrollTo({left:caseCards[caseIndex].offsetLeft - track.offsetLeft,behavior:reduced() ? 'instant' : 'smooth'});
   }
-  if (reader && casePages.length) {
-    readerImage.addEventListener('load', () => fitCaseImage(true));
-    document.querySelectorAll('[data-case-page]').forEach(button => button.addEventListener('click', event => {
-      showCasePage(Number(button.dataset.casePage));
-      showDialog(reader, event.currentTarget);
-      fitCaseImage(true);
-    }));
-    document.querySelector('[data-read-case]').addEventListener('click', event => {
-      showCasePage(caseIndex);
-      showDialog(reader, event.currentTarget);
-      fitCaseImage(true);
-    });
-    document.querySelectorAll('[data-case-step]').forEach(button => button.addEventListener('click', () => showCasePage(caseIndex + Number(button.dataset.caseStep), true)));
-    document.querySelectorAll('[data-reader-step]').forEach(button => button.addEventListener('click', () => showCasePage(caseIndex + Number(button.dataset.readerStep))));
-    function zoomCase(action) {
-      caseZoom = action === 'fit' ? 1 : Math.max(1, Math.min(4, caseZoom + (action === 'in' ? .5 : -.5)));
-      fitCaseImage(action === 'fit');
-    }
-    reader.querySelectorAll('[data-reader-zoom]').forEach(button => button.addEventListener('click', () => zoomCase(button.dataset.readerZoom)));
-    reader.addEventListener('keydown', event => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        event.preventDefault();
-        showCasePage(caseIndex + (event.key === 'ArrowRight' ? 1 : -1));
-      } else if (['+', '=', '-', '0'].includes(event.key)) {
-        event.preventDefault();
-        zoomCase(event.key === '-' ? 'out' : event.key === '0' ? 'fit' : 'in');
-      }
-    });
+  function openCase(index, trigger) {
+    window.LJCCaseReader?.open({id:project.id,title:project.title,pages:casePages},index,trigger);
+  }
+  if (track && casePages.length) {
+    document.querySelectorAll('[data-case-page]').forEach(button => button.addEventListener('click', event => openCase(Number(button.dataset.casePage),event.currentTarget)));
+    document.querySelector('[data-read-case]').addEventListener('click', event => openCase(caseIndex,event.currentTarget));
+    document.querySelectorAll('[data-case-step]').forEach(button => button.addEventListener('click', () => showCasePage(caseIndex + Number(button.dataset.caseStep))));
     track.addEventListener('scroll', () => {
       cancelAnimationFrame(caseScrollFrame);
       caseScrollFrame = requestAnimationFrame(() => {
@@ -170,16 +122,11 @@
     track.addEventListener('keydown', event => {
       if (event.target !== track || !['ArrowLeft','ArrowRight'].includes(event.key)) return;
       event.preventDefault();
-      showCasePage(caseIndex + (event.key === 'ArrowRight' ? 1 : -1), true);
+      showCasePage(caseIndex + (event.key === 'ArrowRight' ? 1 : -1));
     });
-    new ResizeObserver(() => fitCaseImage()).observe(readerStage);
     syncCaseControls();
   }
 
-  if (theme === 'refresh') {
-    const hero = document.querySelector('.refresh-project-hero');
-    new IntersectionObserver(entries => document.body.classList.toggle('project-past-hero', !entries[0].isIntersecting), {rootMargin:'-80px 0px 0px'}).observe(hero);
-  }
 
   // Motion never gates access to an image or text. Reveal once, then disconnect.
   const revealObserver = new IntersectionObserver(entries => {
@@ -217,6 +164,7 @@
   media.addEventListener('change', () => setMotion(paused));
   setMotion(paused, false);
   if (query.get('section')) section(query.get('section'));
+  if (query.get('reader') === '1' && casePages.length) openCase(0,document.querySelector('[data-read-case]'));
   document.dispatchEvent(new CustomEvent('ljc-project-rendered', {detail:{theme,project:project.id}}));
   if (parent !== window) parent.postMessage({type:'ljc-ready',theme,view:'project',project:project.id},location.origin);
 })();
