@@ -153,6 +153,7 @@
   const searchInput=document.getElementById('project-search');
   const resultBox=document.querySelector('.search-results');
   function renderSearch(term) {
+    if(window.LJCSearchExperience?.renderSearch?.(term)) return;
     const normalized=term.trim().toLowerCase();
     const seen=new Set();
     const results=projectData.filter(([,p])=>{
@@ -168,6 +169,13 @@
   }
   searchInput.addEventListener('input',()=>renderSearch(searchInput.value));
   document.querySelector('.search-form').addEventListener('submit',event=>event.preventDefault());
+  document.addEventListener('click', event => {
+    const link=event.target.closest('a[data-project-study]');
+    if(link && window.parent!==window && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.button===0){
+      event.preventDefault();
+      window.parent.postMessage({type:'ljc-project',theme:document.body.dataset.theme},location.origin);
+    }
+  });
 
   document.querySelectorAll('.project-tabs button[data-category]').forEach(button=>button.addEventListener('click',()=>{
     if(button.getAttribute('aria-pressed')==='true')return;
