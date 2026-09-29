@@ -122,7 +122,7 @@
   media.addEventListener('change', updateMotion, options);
   document.addEventListener('visibilitychange', updateMotion, options);
   const observer = new MutationObserver(updateMotion);
-  observer.observe(document.body, {attributes: true, attributeFilter: ['class']});
+  if (document.body) observer.observe(document.body, {attributes: true, attributeFilter: ['class']});
   document.querySelectorAll('dialog').forEach(dialog => observer.observe(dialog, {attributes: true, attributeFilter: ['open']}));
 
   window.addEventListener('pagehide', event => {

@@ -175,7 +175,7 @@
 
   function clearPresentation() {
     if (!gsap) return;
-    gsap.set([dialog, header, logo, body, eyebrow, contact, ...links, ...(preview ? [preview, imageBox] : [])], {
+    gsap.set([dialog, header, logo, body, eyebrow, contact, ...links, ...dialog.querySelectorAll('.practice-controls, .practice-panel'), ...(preview ? [preview, imageBox] : [])], {
       clearProps: 'clipPath,transform,opacity,visibility',
     });
   }
@@ -214,6 +214,8 @@
     if (!animated()) { finishOpen(); return true; }
 
     timeline = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: finishOpen });
+    const practiceControls = dialog.querySelector('.practice-controls');
+    if (practiceControls) timeline.fromTo(practiceControls, {autoAlpha:0,y:12}, {autoAlpha:1,y:0,duration:.5}, .32);
     if (theme !== 'colophon') {
       timeline.fromTo(dialog, { clipPath: 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: .7, ease: 'power3.inOut' }, 0)
         .fromTo(logo, { autoAlpha: 0, y: -8 }, { autoAlpha: 1, y: 0, duration: .42 }, .2)
@@ -242,10 +244,15 @@
     timeline?.kill(); imageTimeline?.kill();
     timeline = imageTimeline = null;
     closingDone = done;
-    if (theme === 'colophon') dialog.scrollTop = 0;
+    if (theme === 'colophon') {
+      dialog.scrollTop = 0;
+      // Practice directories can expand the dialog after its initial opening.
+      setMorphFrames(panelFrames());
+    }
     mark('closing');
     if (!animated()) { finishClose(); return; }
     timeline = gsap.timeline({ onComplete: finishClose });
+    timeline.to(dialog.querySelectorAll('.practice-controls, .practice-panel'), {autoAlpha:0,y:-12,duration:.22,ease:'power2.in'}, 0);
     if (theme !== 'colophon') {
       timeline.to([eyebrow, ...links, contact, ...(preview ? [preview] : [])], { autoAlpha: 0, y: -12, duration: .22, ease: 'power2.in' }, 0)
         .to(dialog, { clipPath: 'inset(0% 0% 100% 0%)', duration: .5, ease: 'power3.inOut' }, .1);
@@ -274,7 +281,18 @@
   });
   media.addEventListener('change', () => settle(dialog));
   const preferenceObserver = new MutationObserver(() => settle(dialog));
-  preferenceObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  if (document.body) preferenceObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  dialog.addEventListener('ljc-practice-change', () => {
+    // A quick practice selection completes the entrance before resizing its panel.
+    if (phase === 'opening') timeline?.progress(1);
+    if (theme === 'colophon' && phase === 'open') setMorphFrames(panelFrames());
+  });
+  if (theme === 'colophon') {
+    const sizeObserver = new ResizeObserver(() => {
+      if (phase === 'open') setMorphFrames(panelFrames());
+    });
+    sizeObserver.observe(dialog);
+  }
   if (theme === 'colophon') addEventListener('resize', () => {
     // Complete a morph measured at the old size before applying fresh geometry.
     if (phase === 'opening' || phase === 'closing') timeline?.progress(1);

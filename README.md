@@ -1,29 +1,30 @@
 # LJC Website Test
 
-Public design-review preview of three LJC website directions: Gallery, Editorial and Colophon.
+Public design-review preview: https://dohyoungkims.github.io/LJC-Website-Test/animated/
 
-Preview: https://dohyoungkims.github.io/LJC-Website-Test/
+## Review together
 
-## Hosting
+Choose one of five directions: Gallery, Editorial, Colophon, Refresh, or Studio. Select **Home pages** or **Project pages** in the toolbar. The project selector includes all 20 public case-study projects and keeps your selection when you change designs.
 
-GitHub Pages serves the `main` branch root. `.nojekyll` preserves the supplied static runtime. `index.html` opens the review interface in `animated/`.
-
-All images, film, fonts and scripts are local. No build or credentials are needed. Keep `animated/` and `assets/` as sibling directories; their relative URLs support this repository subpath.
+Refresh follows the supplied 2025 homepage and project-page design concept. Studio offers a complementary typographic direction. Every project template includes project photography, narrative, facts, and its full embedded case study with paging, zoom, keyboard controls, and page text.
 
 ## Included
 
-- Three responsive home-page studies, three 191 N Wacker project templates, review controls, and project-arrow comparison.
-- Gallery project hover labels and interactive seven-office map.
-- Editorial office-photo selector and four suggested searches.
-- Gallery search filters for People, Projects, Locations, Markets and Disciplines, with reset and empty-state recovery.
-- Source-backed market/business-unit groups, seven disciplines, and Building Solutions in all menus.
-- Five verified office images. Denver and Kansas City retain contact-only states. The Los Angeles image is an expansion rendering.
-- Original project imagery, LJC marks, fonts and film.
+- Five responsive home designs and five project-page templates.
+- Twenty unique case studies: 305 complete spreads and 122 project photographs.
+- Filterable project galleries, suggested searches, practice navigation, and Gallery search categories.
+- Gallery’s interactive seven-office map; photo galleries in the remaining home and project footers.
+- Three to four verified photographs for Chicago, Denver, Los Angeles, Phoenix, and St. Louis; one for Greenville. Kansas City retains its address and contact details while photography is pending. The Los Angeles expansion rendering is explicitly labeled.
+- Larger, consistent practice-menu text and an expanding Colophon panel.
 
-This repository contains only the website runtime, not native Illustrator files, internal research, private source manifests, or the enterprise Brand OS application.
+BCG / Boston Consulting Group, including the former Confidential Professional Services Regional HQ card and image, is excluded from this public preview.
 
-GSAP and ScrollTrigger notices are in `animated/vendor/NOTICE.md`.
+## Content
 
-## Content and review
+Project narratives and imagery come from the supplied LJC case studies and official theljc.com project pages. Historic case-study facts are kept distinct from current website facts where scope differs. This is a static review snapshot, not a live CMS integration. It includes three additional 2026 case studies after the BCG exclusion. The duplicate SLCL Administration case was consolidated to the newer edition.
 
-Choose **Home pages** or **Project pages** in the toolbar, then switch Gallery / Editorial / Colophon. Search uses the existing 14-project study collection plus the public LJC directory: 32 leadership profiles, seven offices, 13 markets and seven disciplines. This is a static review snapshot, not a live CMS integration. Project facts and photographs are sourced from [LJC’s 191 N Wacker page](https://theljc.com/projects/191-n-wacker). Other project links retain their official destinations.
+## Hosting
+
+GitHub Pages serves the main branch root. The root redirects into animated/ while preserving review parameters. All required assets are local; no build or credentials are needed. Keep animated/ and assets/ as sibling directories.
+
+This repository contains the website runtime and selected public-preview imagery, not source PDFs, native design files, internal research, private source manifests, or the enterprise Brand OS application. GSAP notices are in animated/vendor/NOTICE.md.

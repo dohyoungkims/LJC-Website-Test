@@ -173,7 +173,7 @@
     const link=event.target.closest('a[data-project-study]');
     if(link && window.parent!==window && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.button===0){
       event.preventDefault();
-      window.parent.postMessage({type:'ljc-project',theme:document.body.dataset.theme},location.origin);
+      window.parent.postMessage({type:'ljc-project',theme:document.body.dataset.theme,project:link.dataset.projectId||new URL(link.href).searchParams.get('project')||'191-n-wacker'},location.origin);
     }
   });
 

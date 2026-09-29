@@ -147,6 +147,9 @@
     previousPoint = point;
   }
   async function showOfficePhoto(office) {
+    if(window.LJCOfficePhotos){
+      photoFigure.hidden=false;photoSurface.replaceChildren();photoSurface.classList.add('atlas-shared-gallery');window.LJCOfficePhotos.render(photoSurface,office.id);return;
+    }
     const request = ++photoRequest;
     photoTween?.kill(); photoTween = null;
     photoSurface.replaceChildren();
@@ -268,7 +271,7 @@
   media.addEventListener('change', settle);
   document.addEventListener('visibilitychange', settle);
   const preferenceObserver = new MutationObserver(settle);
-  preferenceObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  if (document.body) preferenceObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   const resizeObserver = new ResizeObserver(() => {
     if (resizeFrame) return;
     resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; layoutLabels(); moveView({}, false); });

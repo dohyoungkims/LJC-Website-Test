@@ -32,13 +32,26 @@
     controls.append(button);
     return button;
   });
-  column.append(controls);
-  body.append(panel);
+  if (dialog.dataset.menuExperience === 'gallery') {
+    // Keep the directory controls next to the content they reveal, in DOM order.
+    const practiceColumn = document.createElement('div');
+    practiceColumn.className = 'practice-column';
+    const preview = body.querySelector('.menu-project-preview');
+    practiceColumn.append(controls);
+    if (preview) practiceColumn.append(preview);
+    practiceColumn.append(panel);
+    body.append(practiceColumn);
+  } else {
+    column.append(controls);
+    body.append(panel);
+  }
   let activeButton = null;
   function closePanel(restore = false) {
+    panel.getAnimations().forEach(animation => animation.cancel());
     panel.hidden = true;
     dialog.classList.remove('practice-open');
     buttons.forEach(button => button.setAttribute('aria-expanded','false'));
+    dialog.dispatchEvent(new CustomEvent('ljc-practice-change', {detail:{section:null}}));
     if (restore) activeButton?.focus();
     activeButton = null;
   }
@@ -53,6 +66,7 @@
   function select(section, button) {
     if (activeButton === button) { closePanel(); return; }
     activeButton = button;
+    panel.getAnimations().forEach(animation => animation.cancel());
     const header = document.createElement('div');
     header.className = 'practice-panel-heading';
     const heading = document.createElement('h2');
@@ -93,15 +107,19 @@
       list.append(...items.map(link));
     }
     panel.replaceChildren(header, intro, list);
+    panel.dataset.section = section.key;
     panel.hidden = false;
     panel.scrollTop = 0;
     dialog.classList.add('practice-open');
     dialog.scrollTop = 0;
+    body.scrollTop = 0;
     buttons.forEach(b => b.setAttribute('aria-expanded', String(b === button)));
+    dialog.dispatchEvent(new CustomEvent('ljc-practice-change', {detail:{section:section.key}}));
     // Put keyboard users at the newly disclosed content, with an immediate way back.
     back.focus({preventScroll:true});
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.body.classList.contains('motion-paused')) {
-      panel.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}], {duration:220,easing:'ease-out'});
+      const expanding = dialog.dataset.menuExperience === 'colophon';
+      panel.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}], {duration:expanding ? 350 : 220,delay:expanding ? 120 : 0,fill:'backwards',easing:'ease-out'});
     }
   }
   dialog.addEventListener('close', () => closePanel());

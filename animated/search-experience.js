@@ -66,7 +66,7 @@
   reset.addEventListener('click',()=>{activeType='all';input.value='';renderSearch('');input.focus({preventScroll:true});});toolbar.append(reset);
   function renderResult(record){
     const link=text('a','','search-result');link.href=safeURL(record.previewUrl)?record.previewUrl:record.url;
-    if(record.key==='wacker'){link.href=`project-${theme}.html`;link.dataset.projectStudy='';}
+    if(record.studyId||record.key==='wacker'){const id=record.studyId||'191-n-wacker';link.href=`project-${theme}.html?project=${id}`;link.dataset.projectStudy='';link.dataset.projectId=id;link.removeAttribute('target');}
     if(new URL(link.href,location.href).origin!==location.origin){link.target='_blank';link.rel='noopener';}
     if(record.type==='projects'&&record.image){
       const image=document.createElement('img');image.src=/^(https?:|\.\.\/)/.test(record.image)?record.image:`../${record.image}`;

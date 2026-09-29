@@ -50,3 +50,76 @@
  .practice-list--single a { font-size:22px; }
 }
 @media(max-width:380px) { .practice-list { grid-template-columns:1fr; } }
+
+/* Gallery: one practice column and a shared scale for every destination. */
+.navigation-dialog[data-menu-experience=gallery] {
+ --practice-control-size:clamp(22px,1.9vw,32px);
+ --practice-link-size:clamp(21px,1.7vw,28px);
+ --practice-heading-size:clamp(30px,2.5vw,40px);
+}
+.navigation-dialog[data-menu-experience=gallery] .menu-experience-body {
+ grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+ align-items:start;
+ padding-top:clamp(8px,3dvh,40px);
+ overflow:visible;
+}
+[data-menu-experience=gallery] .practice-column {
+ display:flex; flex-direction:column; gap:clamp(24px,3dvh,40px);
+ min-width:0; min-height:0; height:100%;
+}
+[data-menu-experience=gallery] .practice-controls {
+ margin:0; gap:8px clamp(20px,2vw,36px); flex:none;
+}
+[data-menu-experience=gallery] .practice-controls p {
+ font-size:12px; line-height:1.4; letter-spacing:.065em; margin:0 0 10px;
+}
+[data-menu-experience=gallery] .practice-controls button {
+ font-size:var(--practice-control-size); line-height:1.2; letter-spacing:-.025em;
+ min-height:44px; padding:4px 0 10px; color:#62665e;
+}
+[data-menu-experience=gallery] .practice-controls button:is(:hover,[aria-expanded=true]) { color:#222421; }
+[data-menu-experience=gallery] .practice-panel {
+ align-self:stretch; flex:1; min-height:0; padding:0 8px 8px 0;
+}
+[data-menu-experience=gallery] .practice-panel h2 { font-size:var(--practice-heading-size); }
+[data-menu-experience=gallery] .practice-panel-heading button {
+ font-size:14px; min-height:44px; border-bottom:0; text-decoration:underline; text-underline-offset:6px;
+}
+[data-menu-experience=gallery] .practice-intro { font-size:16px; max-width:none; margin:12px 0 20px; }
+[data-menu-experience=gallery] .practice-list { gap:22px 32px; }
+[data-menu-experience=gallery] .practice-group h3 { font-size:13px; margin-bottom:7px; }
+[data-menu-experience=gallery] .practice-panel a {
+ font-size:var(--practice-link-size); font-weight:400; line-height:1.25;
+ letter-spacing:-.025em; padding:7px 0; min-height:44px;
+}
+[data-menu-experience=gallery] .practice-list--single { gap:7px; }
+@media(min-width:768px) {
+ [data-menu-experience=gallery] .practice-list:not(.practice-list--single) { display:block; columns:2; column-gap:32px; }
+ [data-menu-experience=gallery] .practice-group { break-inside:avoid; margin-bottom:16px; }
+}
+[data-menu-experience=gallery] .practice-column .menu-project-preview { flex:1; min-height:0; justify-content:flex-start; }
+[data-menu-experience=gallery] .practice-column .menu-preview-images {
+ height:min(45dvh,560px); aspect-ratio:auto; flex:1; max-height:560px;
+}
+@media(min-width:1600px) {
+ [data-menu-experience=gallery] .practice-list:not(.practice-list--single) { column-count:3; }
+}
+@media(max-width:1000px) and (min-width:768px) {
+ .navigation-dialog[data-menu-experience=gallery] .menu-experience-body { grid-template-columns:minmax(0,.65fr) minmax(0,1.35fr); gap:28px; }
+ [data-menu-experience=gallery] .practice-controls { gap:4px 20px; }
+ [data-menu-experience=gallery] .practice-list { gap:20px; }
+}
+@media(max-width:767px), (max-height:480px) {
+ .navigation-dialog[data-menu-experience=gallery] .menu-experience-body { padding-top:0; }
+ [data-menu-experience=gallery] .practice-column { height:auto; margin-top:32px; gap:24px; }
+ [data-menu-experience=gallery].practice-open .practice-column { margin-top:0; }
+ [data-menu-experience=gallery] .practice-panel { overflow:visible; max-height:none; padding:0 0 10px; }
+ [data-menu-experience=gallery] .practice-controls { gap:4px 20px; }
+ [data-menu-experience=gallery] .practice-panel-heading { gap:12px; align-items:start; }
+ [data-menu-experience=gallery] .practice-panel-heading button { white-space:normal; max-width:8em; text-align:right; }
+ [data-menu-experience=gallery] .practice-column .menu-project-preview { margin-top:0; }
+ [data-menu-experience=gallery] .practice-column .menu-preview-images { height:240px; flex:none; }
+}
+@media(max-width:600px) {
+ [data-menu-experience=gallery] .practice-list { grid-template-columns:1fr; gap:22px; }
+}
