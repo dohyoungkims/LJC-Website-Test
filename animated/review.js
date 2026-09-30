@@ -14,7 +14,7 @@
   let editionSpread=/^[1-9]\d{0,3}$/.test(q.get('spread')||'')?q.get('spread'):'';
   let paused=q.get('motion')==='off';
   let ready=false;
-  let displayedView=null, navigationTransition=null, resolveFrame=null, frameTimer=0;
+  let displayedView=null, navigationTransition=null, resolveFrame=null, frameTimer=0, navigationGeneration=0;
   const systemMotion=matchMedia('(prefers-reduced-motion: reduce)');
   const frame=document.getElementById('preview');
   let readerExpanded=false, readerReturn=null;
@@ -51,11 +51,12 @@
   function pageURL(){const p=new URLSearchParams({section:view==='project'?'home':section,motion:paused?'off':'on'});if(build)p.set('v',build);if(view==='reverberation'){p.set('theme',theme);editionParams(p);return `reverberation.html?${p}`;}if(view==='cases'){p.set('theme',theme);if(caseProject)p.set('case',caseProject);return `case-studies.html?${p}`;}if(view==='project')p.set('project',project);return `${view==='project'?'project-':''}${theme}.html?${p}`;}
   function updateURL(push=false,statePatch={}){const p=new URLSearchParams({theme,view,section,motion:paused?'off':'on'});if(view==='project')p.set('project',project);if(view==='cases'&&caseProject)p.set('case',caseProject);if(view==='reverberation')editionParams(p);const url=`?${p}`;if(push&&location.search!==url)history.pushState({ljcReview:true,...statePatch},'',url);else history.replaceState({...history.state,...statePatch},'',url);document.getElementById('standalone').href=pageURL();}
   function load(push=false,coverEntryRequest=false){
+    const generation=++navigationGeneration;
     if(readerExpanded)setReaderExpanded(false,{restore:false});
     const changesPublication=displayedView!==null && (displayedView==='reverberation')!==(view==='reverberation');
     const coverEntry=coverEntryRequest&&push&&displayedView!==null&&displayedView!=='reverberation'&&view==='reverberation'&&editionMode==='digital'&&!editionChapter&&!editionStory&&!editionSpread;
     navigationTransition?.skipTransition();
-    const apply=()=>{displayedView=view;loadFrame(push,coverEntry);};
+    const apply=()=>{if(generation!==navigationGeneration)return;displayedView=view;loadFrame(push,coverEntry);};
     // The cover owns its entrance; a wrapper snapshot would hide its first beat.
     if(coverEntry || !changesPublication || paused || systemMotion.matches || !document.startViewTransition){apply();return;}
     const bounds=frame.getBoundingClientRect();
@@ -71,11 +72,15 @@
     const w=innerWidth,h=innerHeight;
     document.documentElement.style.setProperty('--edition-entry-inset',`${clamp(origin.top,h)}px ${clamp(w-origin.left-origin.width,w)}px ${clamp(h-origin.top-origin.height,h)}px ${clamp(origin.left,w)}px`);
     document.documentElement.dataset.editionTransition=view==='reverberation'?'enter':'leave';
-    const transition=document.startViewTransition(()=>new Promise(resolve=>{
-      clearTimeout(frameTimer);resolveFrame=resolve;
-      frameTimer=setTimeout(()=>{resolveFrame?.();resolveFrame=null;},1800);
-      apply();
-    }));
+    const transition=document.startViewTransition(()=>{
+      // skipTransition still invokes a queued update; it must not reload a newer route.
+      if(generation!==navigationGeneration)return;
+      return new Promise(resolve=>{
+        clearTimeout(frameTimer);resolveFrame=resolve;
+        frameTimer=setTimeout(()=>{resolveFrame?.();resolveFrame=null;},1800);
+        apply();
+      });
+    });
     navigationTransition=transition;
     // Skipping a superseded transition rejects ready even when finished resolves.
     transition.ready.catch(()=>{});
