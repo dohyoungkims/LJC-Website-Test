@@ -17,6 +17,26 @@
   let displayedView=null, navigationTransition=null, resolveFrame=null, frameTimer=0;
   const systemMotion=matchMedia('(prefers-reduced-motion: reduce)');
   const frame=document.getElementById('preview');
+  let readerExpanded=false, readerReturn=null;
+  function setReaderExpanded(expanded,{restore=true}={}){
+    const next=expanded===true;
+    if(next!==readerExpanded){
+      if(next)readerReturn={x:window.scrollX,y:window.scrollY,focus:document.activeElement,document:frame.contentDocument};
+      readerExpanded=next;
+      document.body.classList.toggle('reader-expanded',readerExpanded);
+      if(!next){
+        const previous=readerReturn;readerReturn=null;
+        if(restore&&previous){
+          window.scrollTo({left:previous.x,top:previous.y,behavior:'instant'});
+          // The reader owns focus inside its iframe. Only recover a parent
+          // control if hiding the chrome had left the parent itself unfocused.
+          if(document.activeElement===document.body&&previous.focus!==frame&&previous.focus?.isConnected&&previous.focus.getClientRects().length)previous.focus.focus({preventScroll:true});
+        }
+      }
+    }
+    frame.contentWindow.postMessage({type:'ljc-reader-fullscreen-state',expanded:readerExpanded},location.origin);
+  }
+  frame.addEventListener('load',()=>{if(readerExpanded&&frame.contentDocument!==readerReturn?.document)setReaderExpanded(false,{restore:false});});
   const select=document.getElementById('section-select');
   const projectSelect=document.getElementById('project-select');
   const viewSelect=document.getElementById('view-select');
@@ -30,11 +50,14 @@
   function editionParams(p){p.set('mode',editionMode);if(editionChapter)p.set('chapter',editionChapter);if(editionStory)p.set('story',editionStory);if(editionSpread)p.set('spread',editionSpread);}
   function pageURL(){const p=new URLSearchParams({section:view==='project'?'home':section,motion:paused?'off':'on'});if(build)p.set('v',build);if(view==='reverberation'){p.set('theme',theme);editionParams(p);return `reverberation.html?${p}`;}if(view==='cases'){p.set('theme',theme);if(caseProject)p.set('case',caseProject);return `case-studies.html?${p}`;}if(view==='project')p.set('project',project);return `${view==='project'?'project-':''}${theme}.html?${p}`;}
   function updateURL(push=false,statePatch={}){const p=new URLSearchParams({theme,view,section,motion:paused?'off':'on'});if(view==='project')p.set('project',project);if(view==='cases'&&caseProject)p.set('case',caseProject);if(view==='reverberation')editionParams(p);const url=`?${p}`;if(push&&location.search!==url)history.pushState({ljcReview:true,...statePatch},'',url);else history.replaceState({...history.state,...statePatch},'',url);document.getElementById('standalone').href=pageURL();}
-  function load(push=false){
+  function load(push=false,coverEntryRequest=false){
+    if(readerExpanded)setReaderExpanded(false,{restore:false});
     const changesPublication=displayedView!==null && (displayedView==='reverberation')!==(view==='reverberation');
+    const coverEntry=coverEntryRequest&&push&&displayedView!==null&&displayedView!=='reverberation'&&view==='reverberation'&&editionMode==='digital'&&!editionChapter&&!editionStory&&!editionSpread;
     navigationTransition?.skipTransition();
-    const apply=()=>{displayedView=view;loadFrame(push);};
-    if(!changesPublication || paused || systemMotion.matches || !document.startViewTransition){apply();return;}
+    const apply=()=>{displayedView=view;loadFrame(push,coverEntry);};
+    // The cover owns its entrance; a wrapper snapshot would hide its first beat.
+    if(coverEntry || !changesPublication || paused || systemMotion.matches || !document.startViewTransition){apply();return;}
     const bounds=frame.getBoundingClientRect();
     let origin={left:bounds.left+32,top:bounds.top+40,width:200,height:50};
     try {
@@ -54,9 +77,12 @@
       apply();
     }));
     navigationTransition=transition;
+    // Skipping a superseded transition rejects ready even when finished resolves.
+    transition.ready.catch(()=>{});
+    transition.updateCallbackDone.catch(()=>{});
     transition.finished.catch(()=>{}).finally(()=>{if(navigationTransition===transition){navigationTransition=null;delete document.documentElement.dataset.editionTransition;}});
   }
-  function loadFrame(push=false){
+  function loadFrame(push=false,coverEntry=false){
     ready=false;
     document.body.dataset.view=view;
     document.body.dataset.motion=paused?'off':'on';
@@ -69,18 +95,24 @@
     frame.title=view==='reverberation'?'Reverberation 2026 digital edition':view==='cases'?'LJC case-study library':`LJC ${theme[0].toUpperCase()+theme.slice(1)} ${view==='project'?'project page':'home page'} preview`;
     // The review owns navigation history; iframe transitions must not add a
     // second history entry for the same user action.
-    frame.contentWindow.location.replace(new URL(pageURL(),location.href).href);
+    const destination=new URL(pageURL(),location.href);
+    if(coverEntry&&view==='reverberation'&&editionMode==='digital'&&!editionChapter&&!editionStory&&!editionSpread)destination.searchParams.set('entry','cover');
+    frame.contentWindow.location.replace(destination.href);
     document.getElementById('direction-copy').textContent=view==='reverberation'?'Reverberation 2026 · Explore the website or read the complete book.':view==='cases'?'Explore every case study. Open a cover, then choose any spread to read in detail.':(view==='project'?projectDescriptions:descriptions)[theme];
     viewSelect.value=view;select.hidden=view!=='home';projectSelect.hidden=view!=='project';projectSelect.value=project;
     select.value=section;updateURL(push);
   }
   document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>{if(theme!==b.dataset.theme){theme=b.dataset.theme;load(true);}}));
-  viewSelect.addEventListener('change',()=>{view=viewSelect.value;load(true);});
+  viewSelect.addEventListener('change',()=>{view=viewSelect.value;load(true,true);});
   projectSelect.addEventListener('change',()=>{project=projectSelect.value;load(true);});
   select.addEventListener('change',()=>{section=select.value;if(section==='case-studies'){view='cases';load(true);return;}updateURL(true);if(ready)frame.contentWindow.postMessage({type:'ljc-section',id:section},location.origin);else load();});
   motion.addEventListener('click',()=>{paused=!paused;motion.textContent=paused?'Play motion':'Pause motion';motion.setAttribute('aria-pressed',String(paused));if(ready)frame.contentWindow.postMessage({type:'ljc-motion',paused},location.origin);updateURL();});
   addEventListener('message',event=>{
     if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
+    if(event.data?.type==='ljc-reader-fullscreen'){
+      if(typeof event.data.expanded==='boolean')setReaderExpanded(event.data.expanded);
+      return;
+    }
     if(event.data?.type==='ljc-ready'&&event.data.theme===theme){ready=true;
       if(resolveFrame){
         const finish=resolveFrame;resolveFrame=null;clearTimeout(frameTimer);
@@ -90,8 +122,9 @@
     if(event.data?.type==='ljc-motion-state'&&ready){paused=event.data.paused;motion.textContent=event.data.system?'Reduced motion on':paused?'Play motion':'Pause motion';motion.setAttribute('aria-pressed',String(event.data.reduced));motion.disabled=event.data.system;updateURL();}
     if(event.data?.type==='ljc-project'){if(projects.some(p=>p.id===event.data.project))project=event.data.project;view='project';load(true);}
     if(event.data?.type==='ljc-cases'){caseProject='';view='cases';load(true);}
-    if(event.data?.type==='ljc-reverberation'){view='reverberation';editionMode=event.data.mode==='book'?'book':'digital';editionStory='';editionChapter='';editionSpread='';load(true);}
+    if(event.data?.type==='ljc-reverberation'){view='reverberation';editionMode=event.data.mode==='book'?'book':'digital';editionStory='';editionChapter='';editionSpread='';load(true,true);}
     if(event.data?.type==='ljc-reverberation-state'&&view==='reverberation'){
+      if(readerExpanded&&!event.data.spread)setReaderExpanded(false,{restore:false});
       if(event.data.historyAction==='close-reader'&&editionMode==='digital'&&editionSpread&&history.state?.reverbReaderEntry){history.back();return;}
       if(event.data.historyAction==='close-book'&&editionMode==='book'&&history.state?.reverbBookEntry){history.back();return;}
       const oldMode=editionMode;
@@ -107,6 +140,7 @@
     if(event.data?.type==='ljc-home'){view='home';section=sections.includes(event.data.section)?event.data.section:'work';load(true);}
   });
   addEventListener('popstate',()=>{
+    if(readerExpanded)setReaderExpanded(false,{restore:false});
     const previousView=view, previousTheme=theme;
     const p=new URLSearchParams(location.search);
     theme=themes.includes(p.get('theme'))?p.get('theme'):'gallery';

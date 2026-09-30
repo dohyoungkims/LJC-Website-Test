@@ -135,3 +135,8 @@ body.rev-page .case-reader{font-family:RevHaas,"Helvetica Neue",Helvetica,Arial,
  .case-reader-chapters{top:58px;max-height:calc(100dvh - 85px);overflow-y:auto}
  .case-reader-chapters button{padding:10px 0}
 }
+
+/* Prominent reader expansion; thumbnails remain available in full screen. */
+.case-reader[data-edition-reader] .case-reader-actions>.case-reader-fullscreen{border:1px solid #64665e;padding:0 14px;min-height:38px}
+.case-reader[data-edition-reader] .case-reader-actions>.case-reader-fullscreen:hover{background:#eeede6;color:#111210}
+.case-reader-outgoing{will-change:transform,clip-path}

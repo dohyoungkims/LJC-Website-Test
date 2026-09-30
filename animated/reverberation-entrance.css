@@ -1,0 +1,27 @@
+/* The cover is the identity. All dots come from the approved source vector. */
+body.rev-entrance-active{overflow:hidden}
+#rev-website-title:focus{outline:none}
+html[data-rev-entry=cover] body.rev-entrance-active::before{display:none}
+.rev-entrance{position:fixed;inset:0;box-sizing:border-box;width:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#090a0b;color:#d8d5da;overflow:hidden;font-family:RevHaas,"Helvetica Neue",Helvetica,Arial,sans-serif}
+.rev-entrance::backdrop{background:transparent}
+.rev-entrance[open]{display:grid;place-items:center}
+.rev-entrance-composition{display:flex;flex-direction:column;align-items:center;width:min(50vw,50svh,480px);gap:clamp(25px,4.8svh,52px);transform:translateY(-1.5svh)}
+.rev-entrance-identity{width:100%;display:flex;align-items:baseline;justify-content:space-between;gap:20px}
+.rev-entrance-wordmark,.rev-entrance .rev-entrance-identity>img{display:block;width:100%;height:auto;filter:invert(1);opacity:0}
+.rev-entrance .rev-entrance-identity>img{flex:1;min-width:0;width:0}
+.rev-entrance-identity>span{flex:0 0 auto;font-size:12px;line-height:1;font-weight:400;letter-spacing:.01em;color:#b9acbf;opacity:0}
+.rev-entrance-art,.rev-entrance canvas{display:block;width:100%;height:auto;aspect-ratio:1;contain:strict;pointer-events:none}
+.rev-entrance-skip,.rev-entrance [data-rev-entrance-skip]{position:absolute;right:clamp(24px,4.2vw,84px);bottom:clamp(24px,4svh,48px);display:flex;align-items:center;gap:16px;min-height:44px;padding:10px 0;border:0;background:none;color:#b5b2b7;font:inherit;font-size:12px;line-height:1.3;cursor:pointer;text-underline-offset:5px}
+.rev-entrance-skip:hover{color:#fff;text-decoration:underline}
+.rev-entrance-skip:focus-visible{outline:1px solid #c7b4d4;outline-offset:7px}
+.rev-entrance.is-playing .rev-entrance-wordmark,.rev-entrance.is-playing .rev-entrance-identity>img,.rev-entrance.is-playing .rev-entrance-identity>span{animation:rev-entrance-wordmark-in .38s ease-out .1s both}
+@keyframes rev-entrance-wordmark-in{from{opacity:0}to{opacity:.88}}
+@media(max-width:700px){
+ .rev-entrance-composition{width:min(76vw,43svh,420px);gap:33px;transform:translateY(-3svh)}
+ .rev-entrance-identity{gap:14px}
+ .rev-entrance-identity>span{font-size:10px}
+ .rev-entrance-skip{right:24px;bottom:max(22px,env(safe-area-inset-bottom));font-size:12px}
+}
+@media(max-height:480px){.rev-entrance-composition{width:min(46svh,350px);gap:18px;transform:none}.rev-entrance-skip{bottom:12px}}
+@media(prefers-reduced-motion:reduce){.rev-entrance *{animation:none!important;transition:none!important}}
+.motion-paused .rev-entrance *{animation:none!important;transition:none!important}

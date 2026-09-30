@@ -15,6 +15,7 @@
   let dock, trayButton, chapterButton, chapterPanel, fullscreenButton, pdfLink;
   let trayMode = 'auto', trayHovered = false, trayFocused = false;
   let readerOwnsFullscreen = false, fullscreenRequestPending = false;
+  let expandedReader = false, fullscreenWanted = false;
 
   function motion(node, frames, options, cleanup = () => {}) {
     const animation = node.animate(frames, options);
@@ -101,12 +102,17 @@
     const fullscreenFailed = () => {
       if (!fullscreenRequestPending) return;
       fullscreenRequestPending = false; readerOwnsFullscreen = false;
-      status.textContent = 'Full screen is unavailable in this browser.'; updateFullscreen();
+      if (!expandedReader) status.textContent = 'Full screen is unavailable in this browser.';
+      updateFullscreen();
     };
     document.addEventListener('fullscreenerror', fullscreenFailed);
     document.addEventListener('webkitfullscreenerror', fullscreenFailed);
     dialog.querySelector('.case-reader-close').addEventListener('click', () => closeReader(true));
-    dialog.addEventListener('cancel', event => { event.preventDefault(); closeReader(true); });
+    dialog.addEventListener('cancel', event => { event.preventDefault(); if (expandedReader) exitOwnedFullscreen(); else closeReader(true); });
+    window.addEventListener('message',event=>{
+      if (event.source!==window.parent || event.origin!==location.origin || event.data?.type!=='ljc-reader-fullscreen-state') return;
+      expandedReader=Boolean(event.data.expanded);updateFullscreen();
+    });
     dialog.querySelectorAll('[data-reader-step]').forEach(button => button.addEventListener('click', () => select(requestedIndex + Number(button.dataset.readerStep))));
     dialog.querySelectorAll('[data-reader-zoom]').forEach(button => button.addEventListener('click', () => changeZoom(button.dataset.readerZoom)));
     dialog.querySelectorAll('.case-reader-story').forEach(link => link.addEventListener('click', event => {
@@ -164,7 +170,14 @@
     }
   }
   function fullscreenElement() { return document.fullscreenElement || document.webkitFullscreenElement; }
+  function setExpandedReader(expanded) {
+    expandedReader=expanded && window.parent!==window;
+    if (window.parent!==window) window.parent.postMessage({type:'ljc-reader-fullscreen',expanded:expandedReader},location.origin);
+    updateFullscreen();
+  }
   function exitOwnedFullscreen() {
+    fullscreenWanted=false;
+    setExpandedReader(false);
     if (!readerOwnsFullscreen || fullscreenElement() !== document.documentElement) return;
     readerOwnsFullscreen = false;
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
@@ -172,12 +185,17 @@
   }
   function updateFullscreen() {
     if (!fullscreenButton) return;
-    const active = fullscreenElement() === document.documentElement;
-    if (active && fullscreenRequestPending) {
+    const nativeActive = fullscreenElement() === document.documentElement;
+    if (nativeActive && fullscreenRequestPending) {
       fullscreenRequestPending = false; readerOwnsFullscreen = true;
-      if (!dialog.open) exitOwnedFullscreen();
-    } else if (!active && !fullscreenRequestPending) readerOwnsFullscreen = false;
-    fullscreenButton.textContent = active ? 'Exit full screen' : 'Full screen';
+      if (!dialog.open || !fullscreenWanted) exitOwnedFullscreen();
+    } else if (!nativeActive && !fullscreenRequestPending && readerOwnsFullscreen) {
+      readerOwnsFullscreen = false;
+      // Keep the expanded reader if the browser leaves native fullscreen.
+      // The reader's own Exit/Escape restores the surrounding review chrome.
+    }
+    const active=nativeActive || expandedReader;
+    fullscreenButton.textContent = active ? 'Exit full screen ⤡' : 'Full screen ⤢';
     fullscreenButton.setAttribute('aria-label', active ? 'Exit full screen' : 'Enter full screen');
     fullscreenButton.setAttribute('aria-pressed', String(active));
   }
@@ -187,24 +205,31 @@
     // its modal dialog remains above the document in the browser's top layer.
     const host = document.documentElement;
     try {
-      if (fullscreenElement() === host) {
+      if (fullscreenElement() === host || expandedReader) {
+        fullscreenWanted=false;
+        setExpandedReader(false);
         readerOwnsFullscreen = false;
         if (document.fullscreenElement) await document.exitFullscreen();
-        else document.webkitExitFullscreen();
+        else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
       } else if (host.requestFullscreen) {
+        fullscreenWanted=true;
+        setExpandedReader(true);
         fullscreenRequestPending = true;
         await host.requestFullscreen();
         fullscreenRequestPending = false;
         readerOwnsFullscreen = fullscreenElement() === host;
-        if (!dialog.open) exitOwnedFullscreen();
+        if (!dialog.open || !fullscreenWanted) exitOwnedFullscreen();
       } else if (host.webkitRequestFullscreen) {
+        fullscreenWanted=true;
+        setExpandedReader(true);
         fullscreenRequestPending = true;
         host.webkitRequestFullscreen();
-      } else { status.textContent = 'Full screen is unavailable in this browser.'; return; }
+      } else {setExpandedReader(true);if (!expandedReader) status.textContent = 'Full screen is unavailable in this browser.';return;}
       updateFullscreen();
     } catch (_) {
       fullscreenRequestPending = false; readerOwnsFullscreen = false;
-      status.textContent = window.top === window ? 'Full screen is unavailable in this browser. Use your browser’s full-screen command.' : 'Full screen is unavailable here. Open the book in its own tab to use full screen.';
+      if (!expandedReader) status.textContent = 'Full screen is unavailable in this browser. Use your browser’s full-screen command.';
+      updateFullscreen();
     }
   }
   function configureEdition() {
@@ -272,6 +297,7 @@
     if (event.key === 'Escape' && !chapterPanel.hidden) {
       event.preventDefault(); event.stopPropagation(); toggleChapters(false); chapterButton.focus({preventScroll:true}); return;
     }
+    if (event.key==='Escape' && expandedReader) {event.preventDefault();event.stopPropagation();exitOwnedFullscreen();return;}
     if (event.metaKey || event.ctrlKey || event.altKey || event.target.matches('input,textarea,select,[contenteditable=true]')) return;
     const thumbnailFocus = thumbs.contains(event.target), artworkFocus = stage.contains(event.target);
     if (chapterPanel.contains(event.target)) {
@@ -400,6 +426,21 @@
     return true;
   }
 
+  // Directional masked wipe inspired by Osmo's parallax gallery. Book artwork
+  // always finishes completely visible and retains its original proportions.
+  function turnSpread(previousImage, previousRect, direction) {
+    const bounds=canvas.getBoundingClientRect();
+    const outgoing=previousImage.cloneNode();outgoing.removeAttribute('id');outgoing.alt='';
+    outgoing.className='case-reader-outgoing';outgoing.setAttribute('aria-hidden','true');
+    Object.assign(outgoing.style,{position:'absolute',left:`${previousRect.left-bounds.left}px`,top:`${previousRect.top-bounds.top}px`,width:`${previousRect.width}px`,height:`${previousRect.height}px`,pointerEvents:'none'});
+    canvas.append(outgoing);
+    const enter=direction>0 ? 'inset(0 0 0 100%)' : 'inset(0 100% 0 0)';
+    const leave=direction>0 ? 'inset(0 100% 0 0)' : 'inset(0 0 0 100%)';
+    const options={duration:680,easing:'cubic-bezier(.6,.08,.02,.99)'};
+    motion(outgoing,[{clipPath:'inset(0 0 0 0)',transform:'none'},{clipPath:leave,transform:`translateX(${-direction*previousRect.width*.12}px)`}],options,()=>outgoing.remove());
+    motion(image,[{clipPath:enter,transform:`translateX(${direction*previousRect.width*.12}px)`},{clipPath:'inset(0 0 0 0)',transform:'none'}],options);
+  }
+
   async function select(index, {openingRect = null, opening = false} = {}) {
     if (!study || closing) return;
     const target = Math.max(0,Math.min(study.pages.length-1,Math.trunc(Number(index)) || 0));
@@ -412,6 +453,7 @@
       if (request !== token || !dialog.open || closing || study !== content) return;
       clearLoading(); stopMotion(); stopGesture();
       const direction = Math.sign(target-pageIndex), hadImage = pageIndex >= 0;
+      const previousImage=image, previousRect=image.getBoundingClientRect();
       const page = content.pages[target];
       const nextImage = decoded.cloneNode();
       // The decoded source is cached; decoding the clone guarantees the DOM
@@ -425,7 +467,10 @@
       updateContext(); fit(true);
       buttons[pageIndex]?.scrollIntoView({block:'nearest',inline:isEdition() ? 'center' : 'nearest',behavior:'instant'});
       const didFly = opening && fly(openingRect,image.getBoundingClientRect(),true,image);
-      if (!didFly && !reduced()) motion(image,[{opacity:.35,transform:`translateX(${hadImage ? direction*(isEdition() ? 10 : 18) : 0}px)`},{opacity:1,transform:'none'}],{duration:isEdition() ? 180 : 240,easing:ease});
+      if (!didFly && !reduced()) {
+        if (isEdition() && hadImage && direction) turnSpread(previousImage,previousRect,direction);
+        else motion(image,[{opacity:.35,transform:`translateX(${hadImage ? direction*18 : 0}px)`},{opacity:1,transform:'none'}],{duration:240,easing:ease});
+      }
       document.dispatchEvent(new CustomEvent('ljc-case-reader-selection',{detail:{id:study.id,index:pageIndex}}));
       preloadNeighbors(pageIndex);
     } catch (_) {
