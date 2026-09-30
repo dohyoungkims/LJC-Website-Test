@@ -186,3 +186,12 @@
   .navigation-dialog[data-menu-experience="colophon"][data-menu-phase="open"] { transition: none; }
 }
 .motion-paused .navigation-dialog[data-menu-experience="colophon"][data-menu-phase="open"] { transition: none; }
+
+@media(min-width:768px) and (max-height:800px){
+ .navigation-dialog[data-menu-experience=colophon]:not(.practice-open)[open]{gap:16px;padding-block:22px}
+ [data-menu-experience=colophon]:not(.practice-open) .menu-links a{font-size:28px;padding-block:7px}
+ [data-menu-experience=colophon]:not(.practice-open) .menu-eyebrow{margin-bottom:8px}
+ [data-menu-experience=colophon]:not(.practice-open) .practice-controls{margin-top:12px}
+ [data-menu-experience=colophon]:not(.practice-open) .menu-contact{padding-top:14px}
+ [data-menu-experience=colophon]:not(.practice-open) .menu-project-preview{display:none}
+}

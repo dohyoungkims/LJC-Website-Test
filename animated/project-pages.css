@@ -116,3 +116,14 @@ html.project-selecting #project-page{visibility:hidden}
 .project-case-library{font-size:12px;line-height:1.25;white-space:nowrap}
 @media(max-width:700px){.refresh-project-hero{width:calc(100% - 44px);margin-top:20px;min-height:330px;height:52svh}.refresh-hero-title{left:20px;right:20px;bottom:22px}.refresh-hero-title h1{font-size:30px}.refresh-project-hero .hero-photo-open{top:17px;right:18px}.refresh-project-story{padding-top:35px}.refresh-project-photographs{grid-template-columns:1fr;gap:34px;padding-inline:22px}.refresh-project-photo:nth-child(n){grid-column:auto;margin-top:0}.refresh-project-photo:nth-child(even){width:86%;margin-left:auto}.project-header-actions{gap:13px}.project-case-library{white-space:normal;max-width:44px;font-size:11px}.project-header-actions .project-info-link,.project-header-actions .project-info-trigger{font-size:11px}}
 @media(max-width:420px){.project-header .back-work>span:last-child{display:none}.project-header{gap:10px}.project-brand img{width:78px}.project-header-actions{gap:10px}}
+
+/* Keep the publication and project paths readable on narrow screens. */
+@media(max-width:850px){
+ :root{--header:116px}
+ .project-header,[data-project-theme=refresh] .project-header{grid-template-columns:1fr auto;height:116px;gap:0 20px;grid-template-rows:64px 52px}
+ .project-header .back-work{grid-column:1;grid-row:1}
+ .project-header .back-work>span:last-child{display:inline;max-width:none}
+ .project-brand{grid-column:2;grid-row:1}
+ .project-header-actions{grid-column:1/-1;grid-row:2;width:100%;justify-content:space-between;gap:20px;border-top:1px solid var(--line)}
+ .project-header-actions .project-case-library{font-size:12px;max-width:none;white-space:nowrap;display:flex;align-items:center;min-height:44px}
+}

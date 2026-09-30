@@ -4,6 +4,7 @@
   const themes=['gallery','editorial','colophon','refresh','studio'];
   const theme=themes.includes(query.get('theme'))?query.get('theme'):'gallery';
   document.body.dataset.theme=theme;
+  document.querySelector('[data-reverberation]').href=`reverberation.html?theme=${theme}`;
   const projects=JSON.parse(document.getElementById('case-library-data').textContent).projects;
   const cards=[...document.querySelectorAll('.case-study-card')];
   const input=document.getElementById('case-library-search');
