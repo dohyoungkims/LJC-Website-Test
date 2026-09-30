@@ -121,6 +121,14 @@
   }
 
   function navigateWithTransition(next, trigger = null, options = {}) {
+    // Format controls stay clickable during the change. A document snapshot can
+    // intercept a quick second click, so reserve shared transitions for stories.
+    if(next.mode && next.mode !== state.mode){
+      viewTransition?.skipTransition();
+      navigate(next, {...options, immediate:true});
+      if(!reduced())document.querySelector(next.mode==='book'?'#rev-book':'#rev-digital').animate([{opacity:.45},{opacity:1}],{duration:240,easing:'ease-out'});
+      return;
+    }
     if (!document.startViewTransition || reduced()) { navigate(next, options); return; }
     viewTransition?.skipTransition();
     const priorStory = state.story;
@@ -149,6 +157,7 @@
   }
 
   function openSpread(index, trigger = null, {replace = false} = {}) {
+    viewTransition?.skipTransition();
     const safeIndex = Math.max(0, Math.min(data.pages.length - 1, Number(index) || 0));
     if (!state.spread && !replace) modalEntryPushed = true;
     state.spread = safeIndex + 1;
