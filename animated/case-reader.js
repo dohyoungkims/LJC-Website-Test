@@ -12,6 +12,9 @@
   let study = null, pageIndex = -1, requestedIndex = 0, zoom = 1, maxZoom = 1;
   let returnFocus = null, buttons = [], request = 0, loadingTimer, closing = false;
   let gesture = null, lastTap = null, doubleTapAt = 0;
+  let dock, trayButton, chapterButton, chapterPanel, fullscreenButton, pdfLink;
+  let trayMode = 'auto', trayHovered = false, trayFocused = false;
+  let readerOwnsFullscreen = false, fullscreenRequestPending = false;
 
   function motion(node, frames, options, cleanup = () => {}) {
     const animation = node.animate(frames, options);
@@ -70,13 +73,38 @@
     dialog = document.createElement('dialog');
     dialog.className = 'case-reader'; dialog.id = 'case-reader';
     dialog.setAttribute('aria-labelledby', 'case-reader-title');
-    dialog.innerHTML = `<div class="case-reader-toolbar"><div><h2 id="case-reader-title"></h2><p id="case-reader-count" aria-live="polite"></p><a class="case-reader-story" hidden></a><button type="button" class="case-reader-story" hidden></button></div><button type="button" class="case-reader-close" aria-label="Close case study reader" autofocus>×</button></div><div class="case-reader-workspace"><nav class="case-reader-thumbnails" aria-label="All case study spreads"></nav><div class="case-reader-stage" tabindex="0"><div class="case-reader-canvas"><img id="case-reader-image" alt="" hidden></div><div class="case-reader-status" role="status"></div></div></div><div class="case-reader-controls"><button type="button" data-reader-step="-1" aria-label="Previous case study spread">← <span>Previous</span></button><div class="case-reader-zoom" role="group" aria-label="Zoom case study artwork"><button type="button" data-reader-zoom="out" aria-label="Zoom out">−</button><button type="button" data-reader-zoom="fit" aria-label="Fit case study spread">Fit</button><span id="case-reader-scale" aria-live="polite" title="Zoom relative to fit">100%</span><button type="button" data-reader-zoom="in" aria-label="Zoom in">+</button></div><button type="button" data-reader-step="1" aria-label="Next case study spread"><span>Next</span> →</button></div><label class="case-reader-position" hidden><span>Book position</span><input type="range" min="0" step="1" value="0" aria-label="Book position"><output></output></label><details class="case-reader-transcript"><summary>Read spread text</summary><div id="case-reader-text"></div></details>`;
+    dialog.innerHTML = `<div class="case-reader-toolbar"><div><h2 id="case-reader-title"></h2><p id="case-reader-count" aria-live="polite"></p><a class="case-reader-story" hidden></a><button type="button" class="case-reader-story" hidden></button></div><div class="case-reader-actions"><button type="button" class="case-reader-chapter-toggle" aria-expanded="false" aria-controls="case-reader-chapters" hidden>Sections <span aria-hidden="true">⌄</span></button><a class="case-reader-pdf" hidden target="_blank" rel="noopener">PDF ↗</a><button type="button" class="case-reader-fullscreen" hidden>Full screen</button><button type="button" class="case-reader-close" aria-label="Close case study reader" autofocus>×</button></div></div><nav class="case-reader-chapters" id="case-reader-chapters" aria-label="Book sections" hidden></nav><div class="case-reader-workspace"><nav class="case-reader-thumbnails" aria-label="All case study spreads"></nav><div class="case-reader-stage" tabindex="0"><div class="case-reader-canvas"><img id="case-reader-image" alt="" hidden></div><div class="case-reader-status" role="status"></div></div></div><div class="case-reader-controls"><button type="button" data-reader-step="-1" aria-label="Previous case study spread">← <span>Previous</span></button><div class="case-reader-zoom" role="group" aria-label="Zoom case study artwork"><button type="button" data-reader-zoom="out" aria-label="Zoom out">−</button><button type="button" data-reader-zoom="fit" aria-label="Fit case study spread">Fit</button><span id="case-reader-scale" aria-live="polite" title="Zoom relative to fit">100%</span><button type="button" data-reader-zoom="in" aria-label="Zoom in">+</button></div><button type="button" data-reader-step="1" aria-label="Next case study spread"><span>Next</span> →</button></div><div class="case-reader-dock" hidden><button type="button" class="case-reader-tray-toggle" aria-expanded="false" aria-controls="case-reader-tray">Thumbnails <span aria-hidden="true">⌃</span></button><div class="case-reader-tray" id="case-reader-tray" inert></div></div><label class="case-reader-position" hidden><span>Book position</span><input type="range" min="0" step="1" value="0" aria-label="Book position"><output></output></label><details class="case-reader-transcript"><summary>Read spread text</summary><div id="case-reader-text"></div></details>`;
     document.body.append(dialog);
     image = dialog.querySelector('#case-reader-image');
     stage = dialog.querySelector('.case-reader-stage'); canvas = dialog.querySelector('.case-reader-canvas');
     thumbs = dialog.querySelector('.case-reader-thumbnails'); transcript = dialog.querySelector('.case-reader-transcript');
     count = dialog.querySelector('#case-reader-count'); scale = dialog.querySelector('#case-reader-scale');
     status = dialog.querySelector('.case-reader-status'); position = dialog.querySelector('.case-reader-position');
+    dock = dialog.querySelector('.case-reader-dock'); trayButton = dialog.querySelector('.case-reader-tray-toggle');
+    chapterButton = dialog.querySelector('.case-reader-chapter-toggle'); chapterPanel = dialog.querySelector('.case-reader-chapters');
+    fullscreenButton = dialog.querySelector('.case-reader-fullscreen'); pdfLink = dialog.querySelector('.case-reader-pdf');
+    trayButton.addEventListener('click', () => {
+      trayMode = trayMode === 'pinned' ? 'hidden' : 'pinned';
+      updateTray();
+    });
+    dock.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') { trayHovered = true; updateTray(); } });
+    dock.addEventListener('pointerleave', () => { trayHovered = false; updateTray(); });
+    dock.addEventListener('focusin', () => { trayFocused = true; updateTray(); });
+    dock.addEventListener('focusout', event => { trayFocused = dock.contains(event.relatedTarget); updateTray(); });
+    chapterButton.addEventListener('click', () => toggleChapters(chapterPanel.hidden));
+    dialog.addEventListener('click', event => {
+      if (!chapterPanel.hidden && !chapterPanel.contains(event.target) && !chapterButton.contains(event.target)) toggleChapters(false);
+    });
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', updateFullscreen);
+    document.addEventListener('webkitfullscreenchange', updateFullscreen);
+    const fullscreenFailed = () => {
+      if (!fullscreenRequestPending) return;
+      fullscreenRequestPending = false; readerOwnsFullscreen = false;
+      status.textContent = 'Full screen is unavailable in this browser.'; updateFullscreen();
+    };
+    document.addEventListener('fullscreenerror', fullscreenFailed);
+    document.addEventListener('webkitfullscreenerror', fullscreenFailed);
     dialog.querySelector('.case-reader-close').addEventListener('click', () => closeReader(true));
     dialog.addEventListener('cancel', event => { event.preventDefault(); closeReader(true); });
     dialog.querySelectorAll('[data-reader-step]').forEach(button => button.addEventListener('click', () => select(requestedIndex + Number(button.dataset.readerStep))));
@@ -92,6 +120,8 @@
       if (dialog.open) return; // A queued close from an earlier opening must not tear down a new reader.
       ++request; clearLoading(); stopMotion(); stopGesture(); closing = false;
       document.body.classList.remove('case-reader-active');
+      toggleChapters(false);
+      exitOwnedFullscreen();
       if (visible(returnFocus)) returnFocus.focus({preventScroll:true});
       document.dispatchEvent(new CustomEvent('ljc-case-reader-close', {detail:{id:study?.id,index:Math.max(0,pageIndex)}}));
     });
@@ -112,6 +142,94 @@
     };
     media.addEventListener('change', motionChanged);
     if (document.body) new MutationObserver(motionChanged).observe(document.body, {attributes:true,attributeFilter:['class']});
+  }
+
+  function isEdition() { return Boolean(study?.editionReader && study?.kind === 'book'); }
+  function updateTray() {
+    if (!dock || !isEdition()) return;
+    const open = trayMode === 'pinned' || (trayMode === 'auto' && (trayHovered || trayFocused));
+    const tray = dock.querySelector('.case-reader-tray'), changed = dock.dataset.expanded !== String(open);
+    dock.dataset.expanded = String(open); tray.inert = !open;
+    tray.setAttribute('aria-hidden', String(!open));
+    trayButton.setAttribute('aria-expanded', String(open));
+    trayButton.innerHTML = `${trayMode === 'pinned' ? 'Hide thumbnails' : trayMode === 'hidden' ? 'Show thumbnails' : 'Thumbnails'} <span aria-hidden="true">${open ? '⌄' : '⌃'}</span>`;
+    if (open && changed) buttons[Math.max(0,pageIndex)]?.scrollIntoView({block:'nearest',inline:'center',behavior:'instant'});
+  }
+  function toggleChapters(open) {
+    if (!chapterPanel) return;
+    chapterPanel.hidden = !open; chapterButton.setAttribute('aria-expanded', String(open));
+    if (open) {
+      if (!reduced()) motion(chapterPanel,[{opacity:0,transform:'translateY(-6px)'},{opacity:1,transform:'none'}],{duration:160,easing:ease});
+      chapterPanel.querySelector('[aria-current],button')?.focus({preventScroll:true});
+    }
+  }
+  function fullscreenElement() { return document.fullscreenElement || document.webkitFullscreenElement; }
+  function exitOwnedFullscreen() {
+    if (!readerOwnsFullscreen || fullscreenElement() !== document.documentElement) return;
+    readerOwnsFullscreen = false;
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    else document.webkitExitFullscreen?.();
+  }
+  function updateFullscreen() {
+    if (!fullscreenButton) return;
+    const active = fullscreenElement() === document.documentElement;
+    if (active && fullscreenRequestPending) {
+      fullscreenRequestPending = false; readerOwnsFullscreen = true;
+      if (!dialog.open) exitOwnedFullscreen();
+    } else if (!active && !fullscreenRequestPending) readerOwnsFullscreen = false;
+    fullscreenButton.textContent = active ? 'Exit full screen' : 'Full screen';
+    fullscreenButton.setAttribute('aria-label', active ? 'Exit full screen' : 'Enter full screen');
+    fullscreenButton.setAttribute('aria-pressed', String(active));
+  }
+  async function toggleFullscreen() {
+    status.textContent = '';
+    // A dialog cannot itself be a fullscreen element. Fullscreen the document;
+    // its modal dialog remains above the document in the browser's top layer.
+    const host = document.documentElement;
+    try {
+      if (fullscreenElement() === host) {
+        readerOwnsFullscreen = false;
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else document.webkitExitFullscreen();
+      } else if (host.requestFullscreen) {
+        fullscreenRequestPending = true;
+        await host.requestFullscreen();
+        fullscreenRequestPending = false;
+        readerOwnsFullscreen = fullscreenElement() === host;
+        if (!dialog.open) exitOwnedFullscreen();
+      } else if (host.webkitRequestFullscreen) {
+        fullscreenRequestPending = true;
+        host.webkitRequestFullscreen();
+      } else { status.textContent = 'Full screen is unavailable in this browser.'; return; }
+      updateFullscreen();
+    } catch (_) {
+      fullscreenRequestPending = false; readerOwnsFullscreen = false;
+      status.textContent = window.top === window ? 'Full screen is unavailable in this browser. Use your browser’s full-screen command.' : 'Full screen is unavailable here. Open the book in its own tab to use full screen.';
+    }
+  }
+  function configureEdition() {
+    const edition = isEdition();
+    dialog.toggleAttribute('data-edition-reader',edition);
+    dock.hidden = !edition; chapterButton.hidden = !edition || !study.chapters?.length;
+    fullscreenButton.hidden = !edition;
+    const pdf = typeof study.pdf === 'string' ? study.pdf : study.pdf?.src || study.pdf?.href;
+    pdfLink.hidden = !edition || !pdf;
+    if (pdf) { pdfLink.href = pdf; pdfLink.setAttribute('aria-label','Open the complete PDF book in a new tab'); }
+    const close = dialog.querySelector('.case-reader-close');
+    close.textContent = edition ? '← Website' : '×';
+    close.setAttribute('aria-label',edition ? 'Return to website' : study.kind === 'book' ? 'Close book reader' : 'Close case study reader');
+    if (edition) dock.querySelector('.case-reader-tray').append(thumbs);
+    else dialog.querySelector('.case-reader-workspace').prepend(thumbs);
+    trayMode = 'auto'; trayHovered = false; trayFocused = false; updateTray(); toggleChapters(false); updateFullscreen();
+    chapterPanel.replaceChildren(...(study.chapters || []).map((chapter,index) => {
+      const button = document.createElement('button'); button.type = 'button';
+      button.dataset.chapterStart = chapter.startIndex;
+      const number = document.createElement('span'); number.textContent = String(index+1).padStart(2,'0'); number.setAttribute('aria-hidden','true');
+      const title = document.createElement('span'); title.textContent = chapter.title;
+      button.append(number,title);
+      button.addEventListener('click',() => { select(chapter.startIndex); toggleChapters(false); chapterButton.focus({preventScroll:true}); });
+      return button;
+    }));
   }
 
   function fit(reset = false, anchor = null) {
@@ -151,8 +269,17 @@
   }
   function onKey(event) {
     if (closing) return;
+    if (event.key === 'Escape' && !chapterPanel.hidden) {
+      event.preventDefault(); event.stopPropagation(); toggleChapters(false); chapterButton.focus({preventScroll:true}); return;
+    }
     if (event.metaKey || event.ctrlKey || event.altKey || event.target.matches('input,textarea,select,[contenteditable=true]')) return;
     const thumbnailFocus = thumbs.contains(event.target), artworkFocus = stage.contains(event.target);
+    if (chapterPanel.contains(event.target)) {
+      const items = [...chapterPanel.querySelectorAll('button')], current = items.indexOf(event.target);
+      const delta = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+      if (delta) { event.preventDefault(); items[(current+delta+items.length)%items.length]?.focus(); }
+      return;
+    }
     if (artworkFocus && zoom > 1.001 && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
       event.preventDefault();
       stage.scrollBy({left:event.key === 'ArrowLeft' ? -80 : event.key === 'ArrowRight' ? 80 : 0,top:event.key === 'ArrowUp' ? -80 : event.key === 'ArrowDown' ? 80 : 0,behavior:'instant'});
@@ -163,7 +290,7 @@
     else if (event.key === 'ArrowRight') next = requestedIndex + 1;
     else if (thumbnailFocus && event.key === 'Home') next = 0;
     else if (thumbnailFocus && event.key === 'End') next = study.pages.length - 1;
-    else if (thumbnailFocus && ['ArrowUp','ArrowDown'].includes(event.key)) next = requestedIndex + (event.key === 'ArrowDown' ? 1 : -1) * (matchMedia('(max-width:700px)').matches ? 1 : 2);
+    else if (thumbnailFocus && ['ArrowUp','ArrowDown'].includes(event.key)) next = requestedIndex + (event.key === 'ArrowDown' ? 1 : -1) * (isEdition() || matchMedia('(max-width:700px)').matches ? 1 : 2);
     if (next !== null) {
       event.preventDefault(); select(next);
       if (thumbnailFocus) buttons[requestedIndex]?.focus({preventScroll:true});
@@ -252,6 +379,10 @@
       if (index === pageIndex) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
     });
     updatePosition(pageIndex);
+    chapterPanel.querySelectorAll('button').forEach(button => {
+      if (chapter && Number(button.dataset.chapterStart) === chapter.startIndex) button.setAttribute('aria-current','true');
+      else button.removeAttribute('aria-current');
+    });
   }
   function updateSteps() {
     dialog.querySelector('[data-reader-step="-1"]').disabled = requestedIndex <= 0;
@@ -292,9 +423,9 @@
       image.replaceWith(nextImage); image = nextImage;
       pageIndex = target; zoom = 1; transcript.open = false; status.textContent = '';
       updateContext(); fit(true);
-      buttons[pageIndex]?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+      buttons[pageIndex]?.scrollIntoView({block:'nearest',inline:isEdition() ? 'center' : 'nearest',behavior:'instant'});
       const didFly = opening && fly(openingRect,image.getBoundingClientRect(),true,image);
-      if (!didFly) motion(image,reduced() ? [{opacity:.35},{opacity:1}] : [{opacity:.15,transform:`translateX(${hadImage ? direction*18 : 0}px)`},{opacity:1,transform:'none'}],{duration:reduced() ? 90 : 240,easing:ease});
+      if (!didFly && !reduced()) motion(image,[{opacity:.35,transform:`translateX(${hadImage ? direction*(isEdition() ? 10 : 18) : 0}px)`},{opacity:1,transform:'none'}],{duration:isEdition() ? 180 : 240,easing:ease});
       document.dispatchEvent(new CustomEvent('ljc-case-reader-selection',{detail:{id:study.id,index:pageIndex}}));
       preloadNeighbors(pageIndex);
     } catch (_) {
@@ -349,7 +480,7 @@
     dialog.querySelector('.case-reader-zoom').setAttribute('aria-label',`Zoom ${book ? 'book' : 'case study'} artwork`);
     dialog.querySelector('[data-reader-zoom="fit"]').setAttribute('aria-label',`Fit ${book ? 'book' : 'case study'} spread`);
     returnFocus = trigger || (!wasOpen ? document.activeElement : returnFocus);
-    position.hidden = !book; position.querySelector('input').max = content.pages.length-1;
+    position.hidden = !book || isEdition(); position.querySelector('input').max = content.pages.length-1;
     position.style.setProperty('--reader-stops',Math.max(1,content.pages.length-1));
     const ticks = (content.chapters || []).map(chapter => {
       const at = Math.min(100,Math.max(0,chapter.startIndex / Math.max(1,content.pages.length-1) * 100));
@@ -368,10 +499,11 @@
       });
       thumbs.replaceChildren(...buttons);
     }
+    configureEdition();
     if (!dialog.open) dialog.showModal();
     document.body.classList.add('case-reader-active');
     dialog.querySelector('.case-reader-close').focus({preventScroll:true});
-    if (!wasOpen) motion(dialog,[{opacity:0},{opacity:1}],{duration:reduced() ? 90 : 200,easing:'ease-out'});
+    if (!wasOpen && !reduced()) motion(dialog,[{opacity:0},{opacity:1}],{duration:160,easing:'ease-out'});
     select(index,{openingRect,opening:!wasOpen});
     return true;
   }

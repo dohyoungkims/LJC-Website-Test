@@ -10,6 +10,7 @@
   let caseProject=q.get('case')||'';
   let editionMode=q.get('mode')==='book'?'book':'digital';
   let editionStory=q.get('story')||'';
+  let editionChapter=q.get('chapter')||'';
   let editionSpread=/^[1-9]\d{0,3}$/.test(q.get('spread')||'')?q.get('spread'):'';
   let paused=q.get('motion')==='off';
   let ready=false;
@@ -26,7 +27,7 @@
   projects.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.title;projectSelect.append(o);});
   const descriptions={gallery:'A wide photographic sequence and an interactive office map.',editorial:'Warm paper, suggested searches, and image-led navigation.',colophon:'Large photographs and an expanding charcoal menu.',refresh:'Your homepage concept, developed into an integrated project and case-study library.',studio:'A quieter studio index: expressive type, generous images, and direct discovery.'};
   const projectDescriptions={gallery:'An immersive photo sequence with project details on demand.',editorial:'A project story in warm paper, generous photographs, and clear facts.',colophon:'A precise project dossier with a dark masthead and image index.',refresh:'A composed photographic journal, a clear story, and an embedded case study.',studio:'A visual project journal with a complete case-study reader.'};
-  function editionParams(p){p.set('mode',editionMode);if(editionStory)p.set('story',editionStory);if(editionSpread)p.set('spread',editionSpread);}
+  function editionParams(p){p.set('mode',editionMode);if(editionChapter)p.set('chapter',editionChapter);if(editionStory)p.set('story',editionStory);if(editionSpread)p.set('spread',editionSpread);}
   function pageURL(){const p=new URLSearchParams({section:view==='project'?'home':section,motion:paused?'off':'on'});if(build)p.set('v',build);if(view==='reverberation'){p.set('theme',theme);editionParams(p);return `reverberation.html?${p}`;}if(view==='cases'){p.set('theme',theme);if(caseProject)p.set('case',caseProject);return `case-studies.html?${p}`;}if(view==='project')p.set('project',project);return `${view==='project'?'project-':''}${theme}.html?${p}`;}
   function updateURL(push=false,statePatch={}){const p=new URLSearchParams({theme,view,section,motion:paused?'off':'on'});if(view==='project')p.set('project',project);if(view==='cases'&&caseProject)p.set('case',caseProject);if(view==='reverberation')editionParams(p);const url=`?${p}`;if(push&&location.search!==url)history.pushState({ljcReview:true,...statePatch},'',url);else history.replaceState({...history.state,...statePatch},'',url);document.getElementById('standalone').href=pageURL();}
   function load(push=false){
@@ -69,7 +70,7 @@
     // The review owns navigation history; iframe transitions must not add a
     // second history entry for the same user action.
     frame.contentWindow.location.replace(new URL(pageURL(),location.href).href);
-    document.getElementById('direction-copy').textContent=view==='reverberation'?'Reverberation 2026 · Read the stories, explore the issue, or open the complete book.':view==='cases'?'Explore every case study. Open a cover, then choose any spread to read in detail.':(view==='project'?projectDescriptions:descriptions)[theme];
+    document.getElementById('direction-copy').textContent=view==='reverberation'?'Reverberation 2026 · Explore the website or read the complete book.':view==='cases'?'Explore every case study. Open a cover, then choose any spread to read in detail.':(view==='project'?projectDescriptions:descriptions)[theme];
     viewSelect.value=view;select.hidden=view!=='home';projectSelect.hidden=view!=='project';projectSelect.value=project;
     select.value=section;updateURL(push);
   }
@@ -89,16 +90,18 @@
     if(event.data?.type==='ljc-motion-state'&&ready){paused=event.data.paused;motion.textContent=event.data.system?'Reduced motion on':paused?'Play motion':'Pause motion';motion.setAttribute('aria-pressed',String(event.data.reduced));motion.disabled=event.data.system;updateURL();}
     if(event.data?.type==='ljc-project'){if(projects.some(p=>p.id===event.data.project))project=event.data.project;view='project';load(true);}
     if(event.data?.type==='ljc-cases'){caseProject='';view='cases';load(true);}
-    if(event.data?.type==='ljc-reverberation'){view='reverberation';editionMode=event.data.mode==='book'?'book':'digital';editionStory='';editionSpread='';load(true);}
+    if(event.data?.type==='ljc-reverberation'){view='reverberation';editionMode=event.data.mode==='book'?'book':'digital';editionStory='';editionChapter='';editionSpread='';load(true);}
     if(event.data?.type==='ljc-reverberation-state'&&view==='reverberation'){
-      if(event.data.historyAction==='close-reader'&&editionSpread&&history.state?.reverbReaderEntry){history.back();return;}
+      if(event.data.historyAction==='close-reader'&&editionMode==='digital'&&editionSpread&&history.state?.reverbReaderEntry){history.back();return;}
+      if(event.data.historyAction==='close-book'&&editionMode==='book'&&history.state?.reverbBookEntry){history.back();return;}
+      const oldMode=editionMode;
       const wasReaderOpen=Boolean(editionSpread);
-      const oldRoute=`${editionMode}/${editionStory}/${wasReaderOpen}`;
-      editionMode=event.data.mode==='book'?'book':'digital';editionStory=typeof event.data.story==='string'?event.data.story:'';
+      const oldRoute=`${editionMode}/${editionChapter}/${editionStory}/${editionMode==='digital'&&wasReaderOpen}`;
+      editionMode=event.data.mode==='book'?'book':'digital';editionStory=typeof event.data.story==='string'?event.data.story:'';editionChapter=typeof event.data.chapter==='string'?event.data.chapter:'';
       editionSpread=/^[1-9]\d{0,3}$/.test(String(event.data.spread||''))?String(event.data.spread):'';
-      const routeChanged=oldRoute!==`${editionMode}/${editionStory}/${Boolean(editionSpread)}`;
-      const push=routeChanged&&event.data.historyAction!=='close-reader';
-      updateURL(push,push?{reverbReaderEntry:!wasReaderOpen&&Boolean(editionSpread)}:{});
+      const routeChanged=oldRoute!==`${editionMode}/${editionChapter}/${editionStory}/${editionMode==='digital'&&Boolean(editionSpread)}`;
+      const push=routeChanged&&!['close-reader','close-book','sync'].includes(event.data.historyAction);
+      updateURL(push,push?{reverbReaderEntry:editionMode==='digital'&&!wasReaderOpen&&Boolean(editionSpread),reverbBookEntry:oldMode!=='book'&&editionMode==='book'}:['close-reader','close-book'].includes(event.data.historyAction)?{reverbReaderEntry:false,reverbBookEntry:false}:{});
     }
     if(event.data?.type==='ljc-case-selection'&&view==='cases'){caseProject=projects.some(p=>p.id===event.data.project)?event.data.project:'';updateURL();}
     if(event.data?.type==='ljc-home'){view='home';section=sections.includes(event.data.section)?event.data.section:'work';load(true);}
@@ -111,11 +114,11 @@
     section=sections.includes(p.get('section'))?p.get('section'):'intro';
     project=projects.some(item=>item.id===p.get('project'))?p.get('project'):projects[0]?.id;
     caseProject=projects.some(item=>item.id===p.get('case'))?p.get('case'):'';
-    editionMode=p.get('mode')==='book'?'book':'digital';editionStory=p.get('story')||'';
+    editionMode=p.get('mode')==='book'?'book':'digital';editionStory=p.get('story')||'';editionChapter=p.get('chapter')||'';
     editionSpread=/^[1-9]\d{0,3}$/.test(p.get('spread')||'')?p.get('spread'):'';
     paused=p.get('motion')==='off';
     if(previousView==='reverberation'&&view==='reverberation'&&previousTheme===theme&&ready){
-      frame.contentWindow.postMessage({type:'ljc-reverberation-navigate',mode:editionMode,story:editionStory,spread:editionSpread},location.origin);
+      frame.contentWindow.postMessage({type:'ljc-reverberation-navigate',mode:editionMode,chapter:editionChapter,story:editionStory,spread:editionSpread},location.origin);
       frame.contentWindow.postMessage({type:'ljc-motion',paused},location.origin);
       updateURL();
     }else load();
