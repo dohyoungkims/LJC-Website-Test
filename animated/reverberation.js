@@ -20,17 +20,16 @@
         filterChapter();
         return document.querySelector(`[data-spread-index="${index}"]`);
       }
+      if (!state.story) return document.querySelector('#space-spread');
       return state.story ? document.getElementById(`story-${state.story}`)?.querySelector(`[data-read-spread="${index}"]`) : null;
     }
   };
   const scrollPositions = new Map();
-  const storyOrigins = new Map();
   let suppressReaderEvents = false;
   let ignoreNextReaderClose = false;
   let modalEntryPushed = false;
   let state = readState();
   let bookFormat = 'spreads';
-  let viewTransition = null;
 
   function readState() {
     const query = new URLSearchParams(location.search);
@@ -95,6 +94,7 @@
     document.querySelectorAll('.rev-mode-switch [data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode)));
     document.body.dataset.mode = state.mode;
     document.body.dataset.story = activeStory || '';
+    document.dispatchEvent(new CustomEvent('rev-route',{detail:{mode:state.mode,story:activeStory||''}}));
     document.title = activeStory ? `${stories.get(activeStory).title} — Reverberation 2026` : state.mode === 'book' ? 'The book — Reverberation 2026' : 'Reverberation 2026 — LJC';
     if (changed) {
       const target = activeStory ? document.getElementById(`story-${activeStory}`).querySelector('h1') : digital ? document.querySelector('#edition-main') : document.querySelector('#rev-book-title');
@@ -121,43 +121,18 @@
   }
 
   function navigateWithTransition(next, trigger = null, options = {}) {
-    // Format controls stay clickable during the change. A document snapshot can
-    // intercept a quick second click, so reserve shared transitions for stories.
-    if(next.mode && next.mode !== state.mode){
-      viewTransition?.skipTransition();
-      navigate(next, {...options, immediate:true});
-      if(!reduced())document.querySelector(next.mode==='book'?'#rev-book':'#rev-digital').animate([{opacity:.45},{opacity:1}],{duration:240,easing:'ease-out'});
-      return;
-    }
-    if (!document.startViewTransition || reduced()) { navigate(next, options); return; }
-    viewTransition?.skipTransition();
-    const priorStory = state.story;
-    let before = null, after = null;
-    if (next.story && next.story !== priorStory) {
-      before = trigger?.querySelector('img') || null;
-      if (before) storyOrigins.set(next.story, trigger);
-      after = document.getElementById(`story-${next.story}`)?.querySelector('.rev-article-hero img');
-      if (after) after.loading = 'eager';
-    } else if (priorStory && !next.story && next.mode === 'digital') {
-      before = document.getElementById(`story-${priorStory}`)?.querySelector('.rev-article-hero img');
-      after = storyOrigins.get(priorStory)?.querySelector('img');
-    }
-    if (before && (before.getBoundingClientRect().bottom < 0 || before.getBoundingClientRect().top > innerHeight)) before = null;
-    if (before && after) before.style.viewTransitionName = 'rev-story-hero';
-    viewTransition = document.startViewTransition(() => {
-      if (before) before.style.viewTransitionName = '';
-      navigate(next, {...options, immediate:true});
-      if (before && after) after.style.viewTransitionName = 'rev-story-hero';
-    });
-    viewTransition.finished.catch(() => {}).finally(() => {
-      if (before) before.style.viewTransitionName = '';
-      if (after) after.style.viewTransitionName = '';
-      viewTransition = null;
-    });
+    // Commit navigation synchronously. Document snapshots can delay the next
+    // tap and are expensive around the 3D book; a short compositor fade leaves
+    // the new controls live from the first frame.
+    navigate(next, {...options, immediate:true});
+    if (reduced()) return;
+    const pane = state.mode === 'book' ? document.querySelector('#rev-book')
+      : state.story ? document.getElementById(`story-${state.story}`) : document.querySelector('#rev-issue');
+    pane.getAnimations().forEach(animation => animation.cancel());
+    pane.animate([{opacity:.65},{opacity:1}],{duration:180,easing:'ease-out'});
   }
 
   function openSpread(index, trigger = null, {replace = false} = {}) {
-    viewTransition?.skipTransition();
     const safeIndex = Math.max(0, Math.min(data.pages.length - 1, Number(index) || 0));
     if (!state.spread && !replace) modalEntryPushed = true;
     state.spread = safeIndex + 1;
@@ -172,8 +147,14 @@
     document.querySelector('.rev-chapter-select').hidden = bookFormat !== 'spreads';
     document.querySelectorAll('[data-book-format]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.bookFormat === bookFormat)));
     if (bookFormat === 'pdf') {
-      const frame = document.querySelector('[data-pdf-src]');
-      if (!frame.src) frame.src = frame.dataset.pdfSrc;
+      const host = document.querySelector('#rev-pdf-host');
+      if (!host.querySelector('iframe')) {
+        const frame = document.createElement('iframe');
+        frame.title = 'Reverberation 2026 original PDF';
+        frame.src = host.dataset.pdfSrc;
+        frame.loading = 'lazy';
+        host.append(frame);
+      }
     }
   }
 
@@ -192,7 +173,7 @@
       if (!button.hidden) visible++;
     });
     document.querySelectorAll('[data-book-chapter]').forEach(group => { group.hidden = !group.querySelector('[data-spread-index]:not([hidden])'); });
-    document.querySelector('#rev-book-status').textContent = visible ? `${visible} reading views${chapter ? ` · ${chapter.title}` : ''}${query ? ` matching “${document.querySelector('#rev-book-search').value.trim()}”` : ''} · Select a spread to read and zoom` : 'No pages match. Try another name or idea, or choose all chapters.';
+    document.querySelector('#rev-book-status').textContent = visible ? `${visible} spreads and pages${chapter ? ` · ${chapter.title}` : ''}${query ? ` matching “${document.querySelector('#rev-book-search').value.trim()}”` : ''}` : 'No pages match. Try another name or idea, or choose all chapters.';
   }
 
   function ordinaryClick(event) { return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey; }
@@ -234,17 +215,6 @@
 
   document.querySelector('#rev-book-chapter').addEventListener('change', filterChapter);
   document.querySelector('#rev-book-search').addEventListener('input', filterChapter);
-  document.querySelector('#rev-spine').addEventListener('input', event => {
-    const index = Number(event.target.value);
-    const page = data.pages[index];
-    const chapter = [...data.chapters].reverse().find(item => Number(item.startIndex) <= index);
-    const label = page.label.replace(/^Book /,'');
-    document.querySelector('#rev-spine-label').textContent = label.toLocaleLowerCase();
-    document.querySelector('#rev-spine-open').dataset.readSpread = index;
-    event.target.setAttribute('aria-valuetext', `${label}, ${chapter?.title || ''}`);
-    const preview = document.querySelector('#rev-spine-preview img');
-    if (preview) preview.src = page.thumbSrc || page.src;
-  });
   document.addEventListener('ljc-case-reader-story', event => {
     if (event.detail.id !== book.id || !stories.has(event.detail.storyId)) return;
     navigate({mode:'digital',story:event.detail.storyId,spread:''}, {replace:true});
@@ -303,9 +273,10 @@
     }
   });
 
+  document.addEventListener('rev-motion-change',()=>{updateLinks();reportMotion();});
+
   function reportMotion() {
     post({type:'ljc-motion-state',paused:document.body.classList.contains('motion-paused'), reduced:reduced(),system:media.matches});
-    if (reduced()) viewTransition?.skipTransition();
   }
   media.addEventListener('change', reportMotion);
   narrow.addEventListener('change', () => { if (narrow.matches && bookFormat === 'pdf') setBookFormat('spreads'); });
@@ -313,7 +284,6 @@
   document.body.dataset.theme = theme;
   document.body.classList.toggle('motion-paused', params.get('motion') === 'off');
   updateLinks();
-  document.querySelector('#rev-spine').setAttribute('aria-valuetext', `${data.pages[0].label}, ${data.chapters[0].title}`);
   renderView({focus:false, changed:false});
   post({type:'ljc-ready', theme, view:'reverberation'});
   reportMotion();

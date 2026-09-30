@@ -56,7 +56,7 @@
     });
     cache.set(page.src, promise);
     promise.catch(() => { if (cache.get(page.src) === promise) cache.delete(page.src); });
-    while (cache.size > 8) cache.delete(cache.keys().next().value);
+    while (cache.size > (study?.kind === 'book' ? 4 : 8)) cache.delete(cache.keys().next().value);
     return promise;
   }
   function preloadNeighbors(index) {
@@ -111,7 +111,7 @@
       if (closing) closeReader(false); else stopMotion();
     };
     media.addEventListener('change', motionChanged);
-    new MutationObserver(motionChanged).observe(document.body, {attributes:true,attributeFilter:['class']});
+    if (document.body) new MutationObserver(motionChanged).observe(document.body, {attributes:true,attributeFilter:['class']});
   }
 
   function fit(reset = false, anchor = null) {
@@ -319,7 +319,8 @@
       returnFocus = target;
       if (animate) target.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
     }
-    if (!animate || reduced() || pageIndex < 0) { dialog.close(); return; }
+    // Leave the book reader immediately; navigation behind it must accept the next tap.
+    if (!animate || reduced() || pageIndex < 0 || study.kind === 'book') { dialog.close(); return; }
     const token = request, rect = imageRect(target), current = image.getBoundingClientRect();
     const didFly = fly(rect,current,false,image);
     const duration = didFly ? 360 : 120;
